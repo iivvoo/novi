@@ -43,10 +43,18 @@ func main() {
 		}
 	}
 
-	ovim.RenderTerm(editor, s)
+	ui := ovim.NewTermUI(s, editor)
+
+	// ui.RenderTerm()
 
 	quit := make(chan struct{})
 
+	/*
+	 * overall structure:
+	 * UI handles events (mouse, keys, etc) and sends generic events to the main loop,
+	 * e.g. key-escape, enter, etc.
+	 * Using mappings (and more) this is mapped to actions
+	 */
 	go func() {
 		for {
 			update := false
@@ -82,7 +90,7 @@ func main() {
 				update = true
 			}
 			if update {
-				ovim.RenderTerm(editor, s)
+				ui.RenderTerm()
 			}
 		}
 	}()
