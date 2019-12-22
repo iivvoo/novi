@@ -79,7 +79,7 @@ func (t *TermUI) RenderTerm() {
 	// move slice magic, limit checks, to line
 	for _, line := range t.Editor.Lines[t.ViewportY:] {
 		x := 0
-		startX := t.ViewportX - 1
+		startX := t.ViewportX
 		endX := startX + t.EditAreaWidth
 		if startX > len(line) {
 			startX = 0
