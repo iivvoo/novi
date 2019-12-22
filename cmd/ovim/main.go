@@ -9,7 +9,7 @@ import (
 	"gitlab.com/iivvoo/ovim/ovim"
 )
 
-func main() {
+func start() {
 
 	s, e := tcell.NewScreen()
 	if e != nil {
@@ -56,6 +56,13 @@ func main() {
 	 * Using mappings (and more) this is mapped to actions
 	 */
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				close(quit)
+				s.Fini()
+				fmt.Println("Recovered in f", r)
+			}
+		}()
 		for {
 			update := false
 			ev := s.PollEvent()
@@ -89,6 +96,10 @@ func main() {
 			case *tcell.EventResize:
 				update = true
 			}
+			first := editor.Cursors[0]
+			r, c := first.Line, first.Pos
+			lines := len(editor.Lines)
+			ui.SetStatus(fmt.Sprintf("Edit: r %d c %d lines %d", r, c, lines))
 			if update {
 				ui.RenderTerm()
 			}
@@ -98,4 +109,8 @@ func main() {
 	<-quit
 
 	s.Fini()
+}
+
+func main() {
+	start()
 }

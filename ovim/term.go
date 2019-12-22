@@ -1,6 +1,10 @@
 package ovim
 
-import "github.com/gdamore/tcell"
+import (
+	"fmt"
+
+	"github.com/gdamore/tcell"
+)
 
 type TermUI struct {
 	Screen         tcell.Screen
@@ -11,10 +15,19 @@ type TermUI struct {
 	EditAreaHeight int
 	Width          int
 	Height         int
+
+	Status1 string
+	Status2 string
 }
 
 func NewTermUI(Screen tcell.Screen, Editor *Editor) *TermUI {
-	return &TermUI{Screen, Editor, 0, 0, 40, 10, -1, -1}
+	return &TermUI{Screen, Editor, 0, 0, 40, 10, -1, -1,
+		"Status 1 bla bla",
+		"Status 2 bla bla"}
+}
+
+func (t *TermUI) SetStatus(status string) {
+	t.Status2 = status
 }
 
 func (t *TermUI) DrawBox() {
@@ -25,6 +38,17 @@ func (t *TermUI) DrawBox() {
 		t.Screen.SetContent(x, t.EditAreaHeight, '-', nil, tcell.StyleDefault)
 	}
 	t.Screen.SetContent(t.EditAreaWidth, t.EditAreaHeight, '+', nil, tcell.StyleDefault)
+}
+
+func (t *TermUI) DrawStatusbar(bar string, pos int) {
+	for i, r := range bar {
+		t.Screen.SetContent(i, t.Height+pos-1, r, nil, tcell.StyleDefault)
+	}
+}
+
+func (t *TermUI) DrawStatusbars() {
+	t.DrawStatusbar(t.Status1, -1)
+	t.DrawStatusbar(t.Status2, 0)
 }
 
 /*
@@ -45,6 +69,9 @@ func (t *TermUI) RenderTerm() {
 		t.ViewportX = (primaryCursor.Pos - t.EditAreaWidth)
 	}
 
+	t.Status1 = fmt.Sprintf("Term: vp %d %d size %d %d", t.ViewportX, t.ViewportY,
+		t.Width, t.Height)
+	t.DrawStatusbars()
 	y := 0
 
 	t.DrawBox()
