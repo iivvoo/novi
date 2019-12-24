@@ -1,4 +1,4 @@
-package ovim
+package termui
 
 import (
 	"fmt"
@@ -6,12 +6,13 @@ import (
 
 	"github.com/gdamore/tcell"
 	"github.com/gdamore/tcell/encoding"
+	"gitlab.com/iivvoo/ovim/ovim"
 )
 
 type TermUI struct {
 	// internal
 	Screen         tcell.Screen
-	Editor         *Editor
+	Editor         *ovim.Editor
 	ViewportX      int
 	ViewportY      int
 	EditAreaWidth  int
@@ -23,7 +24,7 @@ type TermUI struct {
 	Status2 string
 }
 
-func NewTermUI(Editor *Editor) *TermUI {
+func NewTermUI(Editor *ovim.Editor) *TermUI {
 	s, e := tcell.NewScreen()
 	if e != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", e)
@@ -60,7 +61,7 @@ func (t *TermUI) Loop() {
 
 	// TODO: Move editor logic to editor - only handle UI specific events
 	go func() {
-		defer RecoverFromPanic(func() {
+		defer ovim.RecoverFromPanic(func() {
 			close(quit)
 			t.Finish()
 		})
@@ -79,16 +80,16 @@ func (t *TermUI) Loop() {
 				case tcell.KeyCtrlL:
 					update = true
 				case tcell.KeyLeft:
-					t.Editor.MoveCursor(CursorLeft)
+					t.Editor.MoveCursor(ovim.CursorLeft)
 					update = true
 				case tcell.KeyRight:
-					t.Editor.MoveCursor(CursorRight)
+					t.Editor.MoveCursor(ovim.CursorRight)
 					update = true
 				case tcell.KeyUp:
-					t.Editor.MoveCursor(CursorUp)
+					t.Editor.MoveCursor(ovim.CursorUp)
 					update = true
 				case tcell.KeyDown:
-					t.Editor.MoveCursor(CursorDown)
+					t.Editor.MoveCursor(ovim.CursorDown)
 					update = true
 				default:
 					t.Editor.PutRuneAtCursors(ev.Rune())

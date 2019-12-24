@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"gitlab.com/iivvoo/ovim/ovim"
+	termui "gitlab.com/iivvoo/ovim/ui/term"
 )
 
 func start() {
@@ -14,7 +15,7 @@ func start() {
 	}
 
 	editor := ovim.NewEditor()
-	ui := ovim.NewTermUI(editor)
+	ui := termui.NewTermUI(editor)
 	defer ovim.RecoverFromPanic(func() {
 		ui.Finish()
 	})
