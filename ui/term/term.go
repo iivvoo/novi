@@ -49,66 +49,55 @@ func (t *TermUI) Finish() {
 	t.Screen.Fini()
 }
 
-func (t *TermUI) Loop() {
-	quit := make(chan struct{})
+func (t *TermUI) LoopMadness(c chan ovim.Event) {
+	// go func() {
+	counter := 0
+	for {
+		ev := t.Screen.PollEvent()
 
-	/*
-	 * overall structure:
-	 * UI handles events (mouse, keys, etc) and sends generic events to the main loop,
-	 * e.g. key-escape, enter, etc.
-	 * Using mappings (and more) this is mapped to actions
-	 */
+		t.RenderTerm()
+		// fmt.Printf("[%d]", counter)
+		counter++
+		if _, ok := ev.(*tcell.EventKey); ok {
+			c <- &ovim.CharacterEvent{' '}
+		}
 
-	// TODO: Move editor logic to editor - only handle UI specific events
+	}
+	// }()
+}
+func (t *TermUI) Loop(c chan ovim.Event) {
 	go func() {
 		defer ovim.RecoverFromPanic(func() {
-			close(quit)
 			t.Finish()
 		})
 		for {
-			update := false
 			ev := t.Screen.PollEvent()
+
 			switch ev := ev.(type) {
 			case *tcell.EventKey:
 				switch ev.Key() {
 				case tcell.KeyEscape:
-					close(quit)
-					return
+					c <- &ovim.KeyEvent{ovim.KeyEscape}
 				case tcell.KeyEnter:
-					t.Editor.AddLine()
-					update = true
-				case tcell.KeyCtrlL:
-					update = true
+					c <- &ovim.KeyEvent{ovim.KeyEnter}
+				// case tcell.KeyCtrlL:
 				case tcell.KeyLeft:
-					t.Editor.MoveCursor(ovim.CursorLeft)
-					update = true
+					c <- &ovim.KeyEvent{ovim.KeyLeft}
 				case tcell.KeyRight:
-					t.Editor.MoveCursor(ovim.CursorRight)
-					update = true
+					c <- &ovim.KeyEvent{ovim.KeyRight}
 				case tcell.KeyUp:
-					t.Editor.MoveCursor(ovim.CursorUp)
-					update = true
+					c <- &ovim.KeyEvent{ovim.KeyUp}
 				case tcell.KeyDown:
-					t.Editor.MoveCursor(ovim.CursorDown)
-					update = true
+					c <- &ovim.KeyEvent{ovim.KeyDown}
 				default:
-					t.Editor.PutRuneAtCursors(ev.Rune())
-					update = true
+					c <- &ovim.CharacterEvent{ev.Rune()}
 				}
 			case *tcell.EventResize:
-				update = true
 			}
-			first := t.Editor.Cursors[0]
-			r, c := first.Line, first.Pos
-			lines := len(t.Editor.Lines)
-			t.SetStatus(fmt.Sprintf("Edit: r %d c %d lines %d", r, c, lines))
-			if update {
-				t.RenderTerm()
-			}
+			// how to decide if we need update?
 		}
 	}()
-	<-quit
-	t.Finish()
+	// t.Finish()
 }
 
 func (t *TermUI) SetStatus(status string) {
@@ -192,16 +181,3 @@ func (t *TermUI) RenderTerm() {
 	}
 	t.Screen.Sync()
 }
-
-/*
-  Test area. Test vscode behaviour
-
-  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-  bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
-  cccccccccccccccccccccccccccccccccccccccccccccc
-  dddddddddddddddddddddddddddddddddddddddddddddd
-  eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
-  ffffffffffffffffffffffff
-  ggggggggggggggggggggggg
-  hhhhhhhhhhhhhhhhhhhhhhhh
-*/

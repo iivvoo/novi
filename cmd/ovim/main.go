@@ -8,6 +8,43 @@ import (
 	termui "gitlab.com/iivvoo/ovim/ui/term"
 )
 
+func Loop(e *ovim.Editor, t *termui.TermUI, c chan ovim.Event) {
+	counter := 0
+	quit := make(chan bool)
+
+	go func() {
+
+	loop:
+		for {
+			first := e.Cursors[0]
+			row, col := first.Line, first.Pos
+			lines := len(e.Lines)
+			t.SetStatus(fmt.Sprintf("Edit: r %d c %d lines %d [%d]", row, col, lines, counter))
+			counter++
+			ev := <-c
+			switch ev := ev.(type) {
+			case *ovim.KeyEvent:
+				switch ev.Key {
+				case ovim.KeyEscape:
+					quit <- true
+					break loop
+				case ovim.KeyEnter:
+					e.AddLine()
+				case ovim.KeyLeft, ovim.KeyRight, ovim.KeyUp, ovim.KeyDown:
+					e.MoveCursor(ev.Key)
+				default:
+					panic(ev)
+				}
+			case *ovim.CharacterEvent:
+				e.PutRuneAtCursors(ev.Rune)
+			default:
+				panic(ev)
+			}
+			t.RenderTerm()
+		}
+	}()
+	<-quit
+}
 func start() {
 	if len(os.Args) != 2 {
 		fmt.Println("Usage: ovim filename")
@@ -25,7 +62,12 @@ func start() {
 	editor.LoadFile(fileName)
 	editor.SetCursor(8, 0)
 
-	ui.Loop()
+	c := make(chan ovim.Event)
+
+	ui.RenderTerm()
+	ui.Loop(c)
+	Loop(editor, ui, c)
+	ui.Finish()
 }
 
 func main() {

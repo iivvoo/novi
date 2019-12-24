@@ -93,26 +93,17 @@ func (e *Editor) PutRuneAtCursors(r rune) {
 	}
 }
 
-type CursorMovement int
-
-const (
-	CursorUp CursorMovement = iota
-	CursorDown
-	CursorLeft
-	CursorRight
-)
-
-func (e *Editor) MoveCursor(movement CursorMovement) {
+func (e *Editor) MoveCursor(movement KeyType) {
 	for _, cursor := range e.Cursors {
 		switch movement {
-		case CursorUp:
+		case KeyUp:
 			if cursor.Line > 0 {
 				cursor.Line--
 				if cursor.Pos > len(e.Lines[cursor.Line]) {
 					cursor.Pos = len(e.Lines[cursor.Line])
 				}
 			}
-		case CursorDown:
+		case KeyDown:
 			// weirdness because empty last line that we want to position on
 			if cursor.Line < len(e.Lines)-1 {
 				cursor.Line++
@@ -120,11 +111,11 @@ func (e *Editor) MoveCursor(movement CursorMovement) {
 					cursor.Pos = len(e.Lines[cursor.Line])
 				}
 			}
-		case CursorLeft:
+		case KeyLeft:
 			if cursor.Pos > 0 {
 				cursor.Pos--
 			}
-		case CursorRight:
+		case KeyRight:
 			if cursor.Pos < len(e.Lines[cursor.Line]) {
 				cursor.Pos++
 			}
