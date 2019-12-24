@@ -57,16 +57,20 @@ func (t *TermUI) DrawStatusbars() {
 */
 func (t *TermUI) RenderTerm() {
 	t.Width, t.Height = t.Screen.Size()
-	// if smaller than estate we need, possibly adjust EditArea{Width.Height}
 
-	// if any of the cursors is offscreen, adjust viewport
-	// focus on primary cursor first
 	primaryCursor := t.Editor.Cursors[0]
-	if primaryCursor.Line > t.EditAreaHeight {
-		t.ViewportY = (primaryCursor.Line - t.EditAreaHeight)
+	if primaryCursor.Pos > t.ViewportX+t.EditAreaWidth-1 {
+		t.ViewportX = primaryCursor.Pos - (t.EditAreaWidth - 1)
 	}
-	if primaryCursor.Pos > t.EditAreaWidth {
-		t.ViewportX = (primaryCursor.Pos - t.EditAreaWidth)
+	if primaryCursor.Pos < t.ViewportX {
+		t.ViewportX = primaryCursor.Pos
+	}
+
+	if primaryCursor.Line > t.ViewportY+t.EditAreaHeight-1 {
+		t.ViewportY = primaryCursor.Line - (t.EditAreaHeight - 1)
+	}
+	if primaryCursor.Line < t.ViewportY {
+		t.ViewportY = primaryCursor.Line
 	}
 
 	t.Status1 = fmt.Sprintf("Term: vp %d %d size %d %d", t.ViewportX, t.ViewportY,
@@ -77,7 +81,12 @@ func (t *TermUI) RenderTerm() {
 	t.DrawBox()
 
 	// move slice magic, limit checks, to line
-	for _, line := range t.Editor.Lines[t.ViewportY:] {
+	startY := t.ViewportY
+	endY := startY + t.EditAreaHeight
+	if endY > len(t.Editor.Lines) {
+		endY = len(t.Editor.Lines)
+	}
+	for _, line := range t.Editor.Lines[startY:endY] {
 		x := 0
 		startX := t.ViewportX
 		endX := startX + t.EditAreaWidth

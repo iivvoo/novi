@@ -41,6 +41,13 @@ func (e *Editor) AddLine() {
 	e.Cursors[0].Pos = 0
 }
 
+// SetCursor sets the first cursor at a specific position
+func (e *Editor) SetCursor(row, col int) {
+	e.Cursors[0].Line = row
+	e.Cursors[0].Pos = col
+
+}
+
 // https://github.com/golang/go/wiki/SliceTricks
 
 func (e *Editor) PutRuneAtCursors(r rune) {

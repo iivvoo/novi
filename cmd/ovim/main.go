@@ -65,6 +65,9 @@ func start() {
 	}
 	s.Show()
 
+	defer recoverFromPanic(func() {
+		s.Fini()
+	})
 	editor := ovim.NewEditor()
 
 	text := []string{
@@ -73,6 +76,15 @@ func start() {
 		"So nice you see you",
 		"this is a reeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeally long line",
 		"bye now",
+		"",
+		"",
+		"7",
+		"888888888888888888888888888888888888888888888888888888888888888",
+		"9",
+		"10--",
+		"11",
+		"12",
+		"13",
 	}
 
 	for _, textline := range text {
@@ -82,6 +94,7 @@ func start() {
 			editor.PutRuneAtCursors(rune)
 		}
 	}
+	editor.SetCursor(8, 0)
 
 	ui := ovim.NewTermUI(s, editor)
 
