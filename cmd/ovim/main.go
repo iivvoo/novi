@@ -1,10 +1,17 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"gitlab.com/iivvoo/ovim/ovim"
 )
 
 func start() {
+	if len(os.Args) != 2 {
+		fmt.Println("Usage: ovim filename")
+		os.Exit(1)
+	}
 
 	editor := ovim.NewEditor()
 	ui := ovim.NewTermUI(editor)
@@ -12,34 +19,12 @@ func start() {
 		ui.Finish()
 	})
 
-	text := []string{
-		"Hello world",
-		"",
-		"So nice you see you",
-		"this is a reeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeally long line",
-		"bye now",
-		"",
-		"",
-		"7",
-		"888888888888888888888888888888888888888888888888888888888888888",
-		"9",
-		"10--",
-		"11",
-		"12",
-		"13",
-	}
+	fileName := os.Args[1]
 
-	for _, textline := range text {
-		editor.AddLine()
-
-		for _, rune := range textline {
-			editor.PutRuneAtCursors(rune)
-		}
-	}
+	editor.LoadFile(fileName)
 	editor.SetCursor(8, 0)
 
 	ui.Loop()
-
 }
 
 func main() {

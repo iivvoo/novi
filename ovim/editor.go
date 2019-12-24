@@ -1,5 +1,10 @@
 package ovim
 
+import (
+	"bufio"
+	"os"
+)
+
 /*
  Hoe modeleer je een een editor?
  Een tekst bestaat in principe uit regels. Regels kunnen ingevoegd, verwijderd, ingekort/verlengd worden.
@@ -47,6 +52,21 @@ func NewEditor() *Editor {
 	e := &Editor{}
 	e.Cursors = append(e.Cursors, &Cursor{-1, 0})
 	return e
+}
+
+func (e *Editor) LoadFile(name string) {
+	// reset everything
+
+	file, err := os.Open(name)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		e.Lines = append(e.Lines, []rune(scanner.Text()))
+	}
 }
 
 func (e *Editor) AddLine() {

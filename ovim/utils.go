@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// RecoverFromPanic attempts to print a usable stacktrace in a panic-recover
 func RecoverFromPanic(cleanup func()) {
 	/*
 			A normal debug.Stack() at this point looks like this:
