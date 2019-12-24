@@ -24,6 +24,20 @@ type Cursor struct {
 }
 
 type Line []rune
+
+func (l Line) GetRunes(start, end int) []rune {
+	if start > len(l) {
+		return nil
+	}
+	if start > end {
+		return nil
+	}
+	if end > len(l) {
+		end = len(l)
+	}
+	return l[start:end]
+}
+
 type Editor struct {
 	Lines   []Line
 	Cursors []*Cursor

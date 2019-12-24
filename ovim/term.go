@@ -2,11 +2,14 @@ package ovim
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/encoding"
 )
 
 type TermUI struct {
+	// internal
 	Screen         tcell.Screen
 	Editor         *Editor
 	ViewportX      int
@@ -20,10 +23,91 @@ type TermUI struct {
 	Status2 string
 }
 
-func NewTermUI(Screen tcell.Screen, Editor *Editor) *TermUI {
-	return &TermUI{Screen, Editor, 0, 0, 40, 10, -1, -1,
+func NewTermUI(Editor *Editor) *TermUI {
+	s, e := tcell.NewScreen()
+	if e != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", e)
+		os.Exit(1)
+	}
+
+	encoding.Register()
+
+	if e = s.Init(); e != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", e)
+		os.Exit(1)
+	}
+	s.Show()
+
+	tui := &TermUI{s, Editor, 0, 0, 40, 10, -1, -1,
 		"Status 1 bla bla",
 		"Status 2 bla bla"}
+	return tui
+}
+
+func (t *TermUI) Finish() {
+	t.Screen.Fini()
+}
+
+func (t *TermUI) Loop() {
+	quit := make(chan struct{})
+
+	/*
+	 * overall structure:
+	 * UI handles events (mouse, keys, etc) and sends generic events to the main loop,
+	 * e.g. key-escape, enter, etc.
+	 * Using mappings (and more) this is mapped to actions
+	 */
+
+	// TODO: Move editor logic to editor - only handle UI specific events
+	go func() {
+		defer RecoverFromPanic(func() {
+			close(quit)
+			t.Finish()
+		})
+		for {
+			update := false
+			ev := t.Screen.PollEvent()
+			switch ev := ev.(type) {
+			case *tcell.EventKey:
+				switch ev.Key() {
+				case tcell.KeyEscape:
+					close(quit)
+					return
+				case tcell.KeyEnter:
+					t.Editor.AddLine()
+					update = true
+				case tcell.KeyCtrlL:
+					update = true
+				case tcell.KeyLeft:
+					t.Editor.MoveCursor(CursorLeft)
+					update = true
+				case tcell.KeyRight:
+					t.Editor.MoveCursor(CursorRight)
+					update = true
+				case tcell.KeyUp:
+					t.Editor.MoveCursor(CursorUp)
+					update = true
+				case tcell.KeyDown:
+					t.Editor.MoveCursor(CursorDown)
+					update = true
+				default:
+					t.Editor.PutRuneAtCursors(ev.Rune())
+					update = true
+				}
+			case *tcell.EventResize:
+				update = true
+			}
+			first := t.Editor.Cursors[0]
+			r, c := first.Line, first.Pos
+			lines := len(t.Editor.Lines)
+			t.SetStatus(fmt.Sprintf("Edit: r %d c %d lines %d", r, c, lines))
+			if update {
+				t.RenderTerm()
+			}
+		}
+	}()
+	<-quit
+	t.Finish()
 }
 
 func (t *TermUI) SetStatus(status string) {
@@ -88,15 +172,7 @@ func (t *TermUI) RenderTerm() {
 	}
 	for _, line := range t.Editor.Lines[startY:endY] {
 		x := 0
-		startX := t.ViewportX
-		endX := startX + t.EditAreaWidth
-		if startX > len(line) {
-			startX = 0
-		}
-		if endX > len(line) {
-			endX = len(line)
-		}
-		for _, rune := range line[startX:endX] {
+		for _, rune := range line.GetRunes(t.ViewportX, t.ViewportX+t.EditAreaWidth) {
 			t.Screen.SetContent(x, y, rune, nil, tcell.StyleDefault)
 			x++
 		}
