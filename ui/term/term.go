@@ -49,22 +49,6 @@ func (t *TermUI) Finish() {
 	t.Screen.Fini()
 }
 
-func (t *TermUI) LoopMadness(c chan ovim.Event) {
-	// go func() {
-	counter := 0
-	for {
-		ev := t.Screen.PollEvent()
-
-		t.RenderTerm()
-		// fmt.Printf("[%d]", counter)
-		counter++
-		if _, ok := ev.(*tcell.EventKey); ok {
-			c <- &ovim.CharacterEvent{' '}
-		}
-
-	}
-	// }()
-}
 func (t *TermUI) Loop(c chan ovim.Event) {
 	go func() {
 		defer ovim.RecoverFromPanic(func() {
@@ -129,7 +113,7 @@ func (t *TermUI) DrawStatusbars() {
  Rendering on the screen always starts at (0,0), but characters taken from
  the editor are from a specific viewport
 */
-func (t *TermUI) RenderTerm() {
+func (t *TermUI) Render() {
 	t.Width, t.Height = t.Screen.Size()
 
 	primaryCursor := t.Editor.Cursors[0]
