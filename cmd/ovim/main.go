@@ -9,18 +9,12 @@ import (
 )
 
 func Loop(e *ovim.Editor, t *termui.TermUI, c chan ovim.Event) {
-	counter := 0
 	quit := make(chan bool)
 
 	go func() {
 
 	loop:
 		for {
-			first := e.Cursors[0]
-			row, col := first.Line, first.Pos
-			lines := len(e.Lines)
-			t.SetStatus(fmt.Sprintf("Edit: r %d c %d lines %d [%d]", row, col, lines, counter))
-			counter++
 			ev := <-c
 			switch ev := ev.(type) {
 			case *ovim.KeyEvent:
@@ -40,6 +34,10 @@ func Loop(e *ovim.Editor, t *termui.TermUI, c chan ovim.Event) {
 			default:
 				panic(ev)
 			}
+			first := e.Cursors[0]
+			row, col := first.Line, first.Pos
+			lines := len(e.Lines)
+			t.SetStatus(fmt.Sprintf("Edit: r %d c %d lines %d", row, col, lines))
 			t.RenderTerm()
 		}
 	}()
