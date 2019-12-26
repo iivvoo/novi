@@ -84,6 +84,21 @@ func (b *Buffer) Length() int {
 	return len(b.Lines)
 }
 
+// GetLines returns a Bufer. Would []Lines be more correct?
+func (b *Buffer) GetLines(start, end int) []Line {
+	if start > b.Length() {
+		return nil
+	}
+	if start > end {
+		return nil
+	}
+	if end > b.Length() {
+		end = b.Length()
+	}
+	return b.Lines[start:end]
+
+}
+
 // AddLine adds a line to the bottom of the buffer
 func (b *Buffer) AddLine(line Line) {
 	b.Lines = append(b.Lines, line)

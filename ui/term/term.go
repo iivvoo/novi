@@ -218,18 +218,10 @@ func (t *TermUI) Render() {
 	t.Status1 = fmt.Sprintf("Term: vp %d %d size %d %d", t.ViewportX, t.ViewportY,
 		t.Width, t.Height)
 	t.DrawStatusbars()
-	y := 0
 
 	t.DrawBox()
 
-	// move slice magic, limit checks, to line
-	startY := t.ViewportY
-	endY := startY + t.EditAreaHeight
-	if endY > t.Editor.Buffer.Length() {
-		endY = t.Editor.Buffer.Length()
-	}
-	// Replace slicing with methods on buffer
-	for _, line := range t.Editor.Buffer.Lines[startY:endY] {
+	for y, line := range t.Editor.Buffer.GetLines(t.ViewportY, t.ViewportY+t.EditAreaHeight) {
 		x := 0
 		for _, rune := range line.GetRunes(t.ViewportX, t.ViewportX+t.EditAreaWidth) {
 			t.Screen.SetContent(x, y, rune, nil, tcell.StyleDefault)
@@ -239,7 +231,6 @@ func (t *TermUI) Render() {
 			t.Screen.SetContent(x, y, '~', nil, tcell.StyleDefault)
 			x++
 		}
-		y++
 	}
 	// To make the cursor blink, show/hide it?
 	for _, cursor := range t.Editor.Cursors {
