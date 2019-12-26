@@ -1,6 +1,10 @@
 package basicemu
 
-import "gitlab.com/iivvoo/ovim/ovim"
+import (
+	"fmt"
+
+	"gitlab.com/iivvoo/ovim/ovim"
+)
 
 /*
  * Emulate a regular, basic editor. Standard keybinding/behaviour
@@ -39,15 +43,25 @@ func NewBasic(e *ovim.Editor) *Basic {
 func (em *Basic) HandleEvent(event ovim.Event) bool {
 	switch ev := event.(type) {
 	case *ovim.KeyEvent:
-		switch ev.Key {
-		case ovim.KeyEscape:
-			return false
-		case ovim.KeyEnter:
-			em.Editor.AddLine()
-		case ovim.KeyLeft, ovim.KeyRight, ovim.KeyUp, ovim.KeyDown:
-			em.Editor.MoveCursor(ev.Key)
-		default:
-			panic(ev)
+		// control keys, purely control
+		if ev.Modifier == ovim.ModCtrl {
+			switch ev.Rune {
+			case 'q':
+				return false
+			default:
+				panic(fmt.Sprintf("Unknown ctrl key: %c", ev.Rune))
+			}
+			// no modifier at all
+		} else if ev.Modifier == 0 {
+			switch ev.Key {
+			case ovim.KeyEnter:
+				em.Editor.AddLine()
+			case ovim.KeyLeft, ovim.KeyRight, ovim.KeyUp, ovim.KeyDown:
+				em.Editor.MoveCursor(ev.Key)
+			default:
+				// write unhandled key to log / statusbar
+				panic(ev)
+			}
 		}
 	case *ovim.CharacterEvent:
 		em.Editor.PutRuneAtCursors(ev.Rune)
