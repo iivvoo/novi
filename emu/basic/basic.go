@@ -77,7 +77,7 @@ func (em *Basic) HandleEvent(event ovim.Event) bool {
 	case *ovim.CharacterEvent:
 		em.Editor.Buffer.PutRuneAtCursors(em.Editor.Cursors, ev.Rune)
 		// passing a key here is weird
-		em.Editor.Cursors.Move(em.Editor.Buffer, ovim.KeyRight)
+		em.Editor.Cursors.Move(em.Editor.Buffer, ovim.CursorRight)
 
 		// update cursors
 	default:

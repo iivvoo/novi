@@ -2,6 +2,7 @@ package ovim
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 )
 
@@ -57,5 +58,17 @@ func (e *Editor) SetCursor(row, col int) {
 }
 
 func (e *Editor) MoveCursor(movement KeyType) {
-	e.Cursors.Move(e.Buffer, movement)
+	m := map[KeyType]CursorDirection{
+		KeyLeft:  CursorLeft,
+		KeyRight: CursorRight,
+		KeyUp:    CursorUp,
+		KeyDown:  CursorDown,
+	}
+
+	if direction, ok := m[movement]; ok {
+		e.Cursors.Move(e.Buffer, direction)
+
+	} else {
+		panic(fmt.Sprintf("Can't map key %v to a direction", movement))
+	}
 }

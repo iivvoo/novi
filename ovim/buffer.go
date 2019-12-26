@@ -15,19 +15,28 @@ type Cursor struct {
 	Pos  int
 }
 
+type CursorDirection uint8
+
+const (
+	CursorLeft CursorDirection = iota
+	CursorRight
+	CursorUp
+	CursorDown
+)
+
 type Cursors []*Cursor
 
-func (cs Cursors) Move(b *Buffer, movement KeyType) {
+func (cs Cursors) Move(b *Buffer, movement CursorDirection) {
 	for _, c := range cs {
 		switch movement {
-		case KeyUp:
+		case CursorUp:
 			if c.Line > 0 {
 				c.Line--
 				if c.Pos > len(b.Lines[c.Line]) {
 					c.Pos = len(b.Lines[c.Line])
 				}
 			}
-		case KeyDown:
+		case CursorDown:
 			// weirdness because empty last line that we want to position on
 			if c.Line < len(b.Lines)-1 {
 				c.Line++
@@ -35,11 +44,11 @@ func (cs Cursors) Move(b *Buffer, movement KeyType) {
 					c.Pos = len(b.Lines[c.Line])
 				}
 			}
-		case KeyLeft:
+		case CursorLeft:
 			if c.Pos > 0 {
 				c.Pos--
 			}
-		case KeyRight:
+		case CursorRight:
 			if c.Pos < len(b.Lines[c.Line]) {
 				c.Pos++
 			}
