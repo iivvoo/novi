@@ -40,6 +40,15 @@ func NewBasic(e *ovim.Editor) *Basic {
  * - emulation may do complex tasks such as saving, asking filename
  * - emulation may need to know UI specifics, e.g. screenheight for pgup/pgdn
  */
+
+/*
+ * How should we handle/manipulate lines, buffers?
+ * - A bunch of methods on Editor, hoping they will satisfy al needs,
+ *   with correct multi-cursor behaviours
+ * - Direct manipulation of text buffer
+ *
+ * Also, who is in charge of updating the cursor(s)?
+ */
 func (em *Basic) HandleEvent(event ovim.Event) bool {
 	switch ev := event.(type) {
 	case *ovim.KeyEvent:
@@ -54,8 +63,10 @@ func (em *Basic) HandleEvent(event ovim.Event) bool {
 			// no modifier at all
 		} else if ev.Modifier == 0 {
 			switch ev.Key {
+			case ovim.KeyBackspace:
+
 			case ovim.KeyEnter:
-				em.Editor.AddLine()
+				em.Editor.Buffer.AddLine(ovim.Line(""))
 			case ovim.KeyLeft, ovim.KeyRight, ovim.KeyUp, ovim.KeyDown:
 				em.Editor.MoveCursor(ev.Key)
 			default:
@@ -64,7 +75,11 @@ func (em *Basic) HandleEvent(event ovim.Event) bool {
 			}
 		}
 	case *ovim.CharacterEvent:
-		em.Editor.PutRuneAtCursors(ev.Rune)
+		em.Editor.Buffer.PutRuneAtCursors(em.Editor.Cursors, ev.Rune)
+		// passing a key here is weird
+		em.Editor.Cursors.Move(em.Editor.Buffer, ovim.KeyRight)
+
+		// update cursors
 	default:
 		panic(ev)
 	}

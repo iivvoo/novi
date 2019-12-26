@@ -23,33 +23,13 @@ import (
 
 */
 
-type Cursor struct {
-	Line int
-	Pos  int
-}
-
-type Line []rune
-
-func (l Line) GetRunes(start, end int) []rune {
-	if start > len(l) {
-		return nil
-	}
-	if start > end {
-		return nil
-	}
-	if end > len(l) {
-		end = len(l)
-	}
-	return l[start:end]
-}
-
 type Editor struct {
-	Lines   []Line
-	Cursors []*Cursor
+	Buffer  *Buffer
+	Cursors Cursors
 }
 
 func NewEditor() *Editor {
-	e := &Editor{}
+	e := &Editor{Buffer: NewBuffer()}
 	e.Cursors = append(e.Cursors, &Cursor{-1, 0})
 	return e
 }
@@ -65,14 +45,8 @@ func (e *Editor) LoadFile(name string) {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		e.Lines = append(e.Lines, []rune(scanner.Text()))
+		e.Buffer.AddLine(Line(scanner.Text()))
 	}
-}
-
-func (e *Editor) AddLine() {
-	e.Lines = append(e.Lines, Line{})
-	e.Cursors[0].Line++
-	e.Cursors[0].Pos = 0
 }
 
 // SetCursor sets the first cursor at a specific position
@@ -82,43 +56,6 @@ func (e *Editor) SetCursor(row, col int) {
 
 }
 
-// https://github.com/golang/go/wiki/SliceTricks
-
-func (e *Editor) PutRuneAtCursors(r rune) {
-	for _, cursor := range e.Cursors {
-		line := e.Lines[cursor.Line]
-		line = append(line[:cursor.Pos], append(Line{r}, line[cursor.Pos:]...)...)
-		e.Lines[cursor.Line] = line
-		cursor.Pos++
-	}
-}
-
 func (e *Editor) MoveCursor(movement KeyType) {
-	for _, cursor := range e.Cursors {
-		switch movement {
-		case KeyUp:
-			if cursor.Line > 0 {
-				cursor.Line--
-				if cursor.Pos > len(e.Lines[cursor.Line]) {
-					cursor.Pos = len(e.Lines[cursor.Line])
-				}
-			}
-		case KeyDown:
-			// weirdness because empty last line that we want to position on
-			if cursor.Line < len(e.Lines)-1 {
-				cursor.Line++
-				if cursor.Pos > len(e.Lines[cursor.Line]) {
-					cursor.Pos = len(e.Lines[cursor.Line])
-				}
-			}
-		case KeyLeft:
-			if cursor.Pos > 0 {
-				cursor.Pos--
-			}
-		case KeyRight:
-			if cursor.Pos < len(e.Lines[cursor.Line]) {
-				cursor.Pos++
-			}
-		}
-	}
+	e.Cursors.Move(e.Buffer, movement)
 }

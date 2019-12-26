@@ -225,10 +225,11 @@ func (t *TermUI) Render() {
 	// move slice magic, limit checks, to line
 	startY := t.ViewportY
 	endY := startY + t.EditAreaHeight
-	if endY > len(t.Editor.Lines) {
-		endY = len(t.Editor.Lines)
+	if endY > t.Editor.Buffer.Length() {
+		endY = t.Editor.Buffer.Length()
 	}
-	for _, line := range t.Editor.Lines[startY:endY] {
+	// Replace slicing with methods on buffer
+	for _, line := range t.Editor.Buffer.Lines[startY:endY] {
 		x := 0
 		for _, rune := range line.GetRunes(t.ViewportX, t.ViewportX+t.EditAreaWidth) {
 			t.Screen.SetContent(x, y, rune, nil, tcell.StyleDefault)

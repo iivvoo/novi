@@ -38,7 +38,7 @@ func (c *Core) Loop() {
 
 		first := c.Editor.Cursors[0]
 		row, col := first.Line, first.Pos
-		lines := len(c.Editor.Lines)
+		lines := c.Editor.Buffer.Length()
 		c.UI.SetStatus(fmt.Sprintf("Edit: r %d c %d lines %d", row, col, lines))
 		c.UI.Render()
 	}
