@@ -84,7 +84,7 @@ func (b *Buffer) Length() int {
 	return len(b.Lines)
 }
 
-// GetLines returns a Bufer. Would []Lines be more correct?
+// GetLines attempts to retun the lines between start/end
 func (b *Buffer) GetLines(start, end int) []Line {
 	if start > b.Length() {
 		return nil
