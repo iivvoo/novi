@@ -66,7 +66,8 @@ func (em *Basic) HandleEvent(event ovim.Event) bool {
 			case ovim.KeyBackspace:
 
 			case ovim.KeyEnter:
-				em.Editor.Buffer.AddLine(ovim.Line(""))
+				em.Editor.Buffer.SplitLines(em.Editor.Cursors)
+				// move cursors to beginning of next line
 			case ovim.KeyLeft, ovim.KeyRight, ovim.KeyUp, ovim.KeyDown:
 				em.Editor.MoveCursor(ev.Key)
 			default:

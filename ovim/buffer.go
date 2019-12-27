@@ -66,3 +66,19 @@ func (b *Buffer) PutRuneAtCursors(cs Cursors, r rune) {
 		b.Lines[c.Line] = line
 	}
 }
+
+/* SplitLines
+ *
+ * Split lines ae position of cursors.
+ * This is tricky since it will create extra lines, which may affect cursors below
+ */
+func (b *Buffer) SplitLines(cs Cursors) {
+	linesAdded := 0
+	for _, c := range cs {
+		line := b.Lines[c.Line+linesAdded]
+		before, after := line[c.Pos:], line[:c.Pos]
+		b.Lines = append(b.Lines[:c.Line+linesAdded],
+			append([]Line{after, before}, b.Lines[c.Line+linesAdded+1:]...)...)
+		linesAdded++
+	}
+}
