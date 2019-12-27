@@ -67,7 +67,9 @@ func (em *Basic) HandleEvent(event ovim.Event) bool {
 
 			case ovim.KeyEnter:
 				em.Editor.Buffer.SplitLines(em.Editor.Cursors)
-				// move cursors to beginning of next line
+				// multiple down with multiple cursors! XXX
+				em.Editor.Cursors.Move(em.Editor.Buffer, ovim.CursorDown)
+				em.Editor.Cursors.Move(em.Editor.Buffer, ovim.CursorBegin)
 			case ovim.KeyLeft, ovim.KeyRight, ovim.KeyUp, ovim.KeyDown:
 				em.Editor.MoveCursor(ev.Key)
 			default:

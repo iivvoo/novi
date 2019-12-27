@@ -20,6 +20,8 @@ const (
 	CursorRight
 	CursorUp
 	CursorDown
+	CursorBegin
+	CursorEnd
 )
 
 type Cursors []*Cursor
@@ -50,6 +52,10 @@ func (cs Cursors) Move(b *Buffer, movement CursorDirection) {
 			if c.Pos < len(b.Lines[c.Line]) {
 				c.Pos++
 			}
+		case CursorBegin:
+			c.Pos = 0
+		case CursorEnd:
+			c.Pos = len(b.Lines[c.Line])
 		}
 	}
 }
