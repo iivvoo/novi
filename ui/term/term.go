@@ -221,6 +221,11 @@ func (t *TermUI) Render() {
 
 	t.DrawBox()
 
+	/*
+	 * Print the text within the current viewports, padding lines with `fillRune`
+	 * to clear any remainders. THe latter is relevant when scrolling, for example
+	 */
+	fillRune := '~'
 	for y, line := range t.Editor.Buffer.GetLines(t.ViewportY, t.ViewportY+t.EditAreaHeight) {
 		x := 0
 		for _, rune := range line.GetRunes(t.ViewportX, t.ViewportX+t.EditAreaWidth) {
@@ -228,7 +233,7 @@ func (t *TermUI) Render() {
 			x++
 		}
 		for x < t.EditAreaWidth {
-			t.Screen.SetContent(x, y, '~', nil, tcell.StyleDefault)
+			t.Screen.SetContent(x, y, fillRune, nil, tcell.StyleDefault)
 			x++
 		}
 	}
