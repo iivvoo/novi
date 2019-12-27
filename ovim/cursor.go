@@ -1,10 +1,18 @@
 package ovim
 
+/*
+ * Cursors always (?) operate in the context of a buffer with lines,
+ * and are only valid based on that buffer. Bind cursors to buffer
+ * expliclty?
+ */
+
+// Cursor defines a position within a buffer
 type Cursor struct {
 	Line int
 	Pos  int
 }
 
+// CursorDirection defines the direction a cursor can go
 type CursorDirection uint8
 
 const (
