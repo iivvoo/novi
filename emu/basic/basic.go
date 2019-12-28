@@ -41,6 +41,12 @@ func NewBasic(e *ovim.Editor) *Basic {
  * - emulation may need to know UI specifics, e.g. screenheight for pgup/pgdn
  */
 
+func (em *Basic) Backspace() {
+	em.Editor.Buffer.RemoveRuneBeforeCursors(em.Editor.Cursors)
+	em.Editor.Cursors.Move(em.Editor.Buffer, ovim.CursorLeft)
+
+}
+
 /*
  * How should we handle/manipulate lines, buffers?
  * - A bunch of methods on Editor, hoping they will satisfy al needs,
@@ -55,6 +61,9 @@ func (em *Basic) HandleEvent(event ovim.Event) bool {
 		// control keys, purely control
 		if ev.Modifier == ovim.ModCtrl {
 			switch ev.Rune {
+			case 'h':
+				// dup with backspace/del, which I can't handle properly yet
+				em.Backspace()
 			case 'q':
 				return false
 			default:
@@ -63,8 +72,9 @@ func (em *Basic) HandleEvent(event ovim.Event) bool {
 			// no modifier at all
 		} else if ev.Modifier == 0 {
 			switch ev.Key {
-			case ovim.KeyBackspace:
-
+			case ovim.KeyBackspace, ovim.KeyDelete:
+				// for cursors on pos 0, join with prev (if any)
+				em.Backspace()
 			case ovim.KeyEnter:
 				em.Editor.Buffer.SplitLines(em.Editor.Cursors)
 				// multiple down with multiple cursors! XXX
