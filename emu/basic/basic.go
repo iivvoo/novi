@@ -43,11 +43,28 @@ func NewBasic(e *ovim.Editor) *Basic {
  */
 
 func (em *Basic) Backspace() {
-	// figure out why 'backspace' doesn't work (del/ctrl-h do)
-	// per-cursor behaviour, depending on position (join lines)
-	em.Editor.Buffer.RemoveRuneBeforeCursors(em.Editor.Cursors)
-	em.Editor.Cursors.Move(em.Editor.Buffer, ovim.CursorLeft)
+	for _, c := range em.Editor.Cursors {
+		if c.Pos > 0 {
+			em.Editor.Buffer.RemoveRuneBeforeCursors(em.Editor.Cursors)
+			c.Move(em.Editor.Buffer, ovim.CursorLeft)
+		} else if c.Line > 0 {
+			log.Printf("Joining %d with %d", c.Line, c.Line-1)
+			// first move the cursor
+			l := c.Line
+			c.Move(em.Editor.Buffer, ovim.CursorUp)
+			c.Move(em.Editor.Buffer, ovim.CursorEnd)
+			em.Editor.Buffer.JoinLineWithPrevious(l)
 
+			// adjust all other cursors that are on/after l
+			// XXX Untested
+			for _, cc := range em.Editor.Cursors {
+				// all *other*!
+				if cc != c {
+					cc.Move(em.Editor.Buffer, ovim.CursorUp)
+				}
+			}
+		}
+	}
 }
 
 /*
@@ -65,7 +82,6 @@ func (em *Basic) HandleEvent(event ovim.Event) bool {
 		if ev.Modifier == ovim.ModCtrl {
 			switch ev.Rune {
 			case 'h':
-				// dup with backspace/del, which I can't handle properly yet
 				em.Backspace()
 			case 'q':
 				return false

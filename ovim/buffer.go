@@ -94,3 +94,30 @@ func (b *Buffer) SplitLines(cs Cursors) {
 		linesAdded++
 	}
 }
+
+/* RemoveLine
+ *
+ * Remove and entire line. Does not update cursors wich may get invalid because
+ * of the operation
+ */
+func (b *Buffer) RemoveLine(line int) bool {
+	if line >= b.Length() {
+		return false
+	}
+	b.Lines = append(b.Lines[:line], b.Lines[line+1:]...)
+	return true
+}
+
+/* JoinLineWitPrevious
+ *
+ * Join two lines: the one on the given position with the one before
+ */
+func (b *Buffer) JoinLineWithPrevious(line int) bool {
+	if line == 0 || line > b.Length()-1 {
+		return false
+	}
+
+	b.Lines[line-1] = append(b.Lines[line-1], b.Lines[line]...)
+	b.RemoveLine(line)
+	return true
+}
