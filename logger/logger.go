@@ -40,6 +40,7 @@ func CloseLog() {
 }
 
 func (l *Logger) GetLogger(prefix string) *log.Logger {
+	prefix = "[" + prefix + "] "
 	if _, ok := l.loggers[prefix]; !ok {
 		l.loggers[prefix] = log.New(l.f, prefix, log.Ldate|log.Ltime|log.Llongfile)
 	}

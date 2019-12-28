@@ -1,10 +1,11 @@
 package basicemu
 
 import (
-	"fmt"
-
+	"gitlab.com/iivvoo/ovim/logger"
 	"gitlab.com/iivvoo/ovim/ovim"
 )
+
+var log = logger.GetLogger("basicemu")
 
 /*
  * Emulate a regular, basic editor. Standard keybinding/behaviour
@@ -69,7 +70,7 @@ func (em *Basic) HandleEvent(event ovim.Event) bool {
 			case 'q':
 				return false
 			default:
-				panic(fmt.Sprintf("Unknown ctrl key: %c", ev.Rune))
+				log.Printf("Don't know what to do with control key %+v %c", ev, ev.Rune)
 			}
 			// no modifier at all
 		} else if ev.Modifier == 0 {
@@ -85,15 +86,14 @@ func (em *Basic) HandleEvent(event ovim.Event) bool {
 			case ovim.KeyLeft, ovim.KeyRight, ovim.KeyUp, ovim.KeyDown:
 				em.Editor.MoveCursor(ev.Key)
 			default:
-				// write unhandled key to log / statusbar
-				panic(ev)
+				log.Printf("Don't know what to do with key event %+v", ev)
 			}
 		}
 	case *ovim.CharacterEvent:
 		em.Editor.Buffer.PutRuneAtCursors(em.Editor.Cursors, ev.Rune)
 		em.Editor.Cursors.Move(em.Editor.Buffer, ovim.CursorRight)
 	default:
-		panic(ev)
+		log.Printf("Don't know what to do with event %+v", ev)
 	}
 	return true
 }

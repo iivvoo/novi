@@ -53,32 +53,34 @@ func (t *TermUI) Finish() {
 }
 
 var KeyMap = map[tcell.Key]ovim.KeyType{
-	tcell.KeyEsc:       ovim.KeyEscape,
-	tcell.KeyEnter:     ovim.KeyEnter,
-	tcell.KeyUp:        ovim.KeyUp,
-	tcell.KeyDown:      ovim.KeyDown,
-	tcell.KeyLeft:      ovim.KeyLeft,
-	tcell.KeyRight:     ovim.KeyRight,
-	tcell.KeyHome:      ovim.KeyHome,
-	tcell.KeyEnd:       ovim.KeyEnd,
-	tcell.KeyPgUp:      ovim.KeyPgUp,
-	tcell.KeyPgDn:      ovim.KeyPgDn,
-	tcell.KeyBackspace: ovim.KeyBackspace,
-	tcell.KeyTab:       ovim.KeyTab,
-	tcell.KeyDelete:    ovim.KeyDelete,
-	tcell.KeyInsert:    ovim.KeyInsert,
-	tcell.KeyF1:        ovim.KeyF1,
-	tcell.KeyF2:        ovim.KeyF2,
-	tcell.KeyF3:        ovim.KeyF3,
-	tcell.KeyF4:        ovim.KeyF4,
-	tcell.KeyF5:        ovim.KeyF5,
-	tcell.KeyF6:        ovim.KeyF6,
-	tcell.KeyF7:        ovim.KeyF7,
-	tcell.KeyF8:        ovim.KeyF8,
-	tcell.KeyF9:        ovim.KeyF9,
-	tcell.KeyF10:       ovim.KeyF10,
-	tcell.KeyF11:       ovim.KeyF11,
-	tcell.KeyF12:       ovim.KeyF12,
+	// KeyBackspace2 is the 0x7F variant that's a regular character but > ' '
+	tcell.KeyBackspace2: ovim.KeyBackspace,
+	tcell.KeyEsc:        ovim.KeyEscape,
+	tcell.KeyEnter:      ovim.KeyEnter,
+	tcell.KeyUp:         ovim.KeyUp,
+	tcell.KeyDown:       ovim.KeyDown,
+	tcell.KeyLeft:       ovim.KeyLeft,
+	tcell.KeyRight:      ovim.KeyRight,
+	tcell.KeyHome:       ovim.KeyHome,
+	tcell.KeyEnd:        ovim.KeyEnd,
+	tcell.KeyPgUp:       ovim.KeyPgUp,
+	tcell.KeyPgDn:       ovim.KeyPgDn,
+	tcell.KeyBackspace:  ovim.KeyBackspace,
+	tcell.KeyTab:        ovim.KeyTab,
+	tcell.KeyDelete:     ovim.KeyDelete,
+	tcell.KeyInsert:     ovim.KeyInsert,
+	tcell.KeyF1:         ovim.KeyF1,
+	tcell.KeyF2:         ovim.KeyF2,
+	tcell.KeyF3:         ovim.KeyF3,
+	tcell.KeyF4:         ovim.KeyF4,
+	tcell.KeyF5:         ovim.KeyF5,
+	tcell.KeyF6:         ovim.KeyF6,
+	tcell.KeyF7:         ovim.KeyF7,
+	tcell.KeyF8:         ovim.KeyF8,
+	tcell.KeyF9:         ovim.KeyF9,
+	tcell.KeyF10:        ovim.KeyF10,
+	tcell.KeyF11:        ovim.KeyF11,
+	tcell.KeyF12:        ovim.KeyF12,
 }
 
 type DecomposedKey struct {
@@ -131,7 +133,9 @@ func (t *TermUI) Loop(c chan ovim.Event) {
 		for {
 			ev := t.Screen.PollEvent()
 
-			log.Printf("%+v", ev)
+			if ev != nil {
+				log.Printf("%+v", ev)
+			}
 			switch ev := ev.(type) {
 			case *tcell.EventKey:
 				/*
