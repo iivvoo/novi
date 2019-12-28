@@ -6,8 +6,11 @@ import (
 
 	"github.com/gdamore/tcell"
 	"github.com/gdamore/tcell/encoding"
+	"gitlab.com/iivvoo/ovim/logger"
 	"gitlab.com/iivvoo/ovim/ovim"
 )
+
+var log = logger.GetLogger("termui")
 
 type TermUI struct {
 	// internal
@@ -128,6 +131,7 @@ func (t *TermUI) Loop(c chan ovim.Event) {
 		for {
 			ev := t.Screen.PollEvent()
 
+			log.Printf("%+v", ev)
 			switch ev := ev.(type) {
 			case *tcell.EventKey:
 				/*

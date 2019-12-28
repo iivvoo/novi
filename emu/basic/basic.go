@@ -42,6 +42,8 @@ func NewBasic(e *ovim.Editor) *Basic {
  */
 
 func (em *Basic) Backspace() {
+	// figure out why 'backspace' doesn't work (del/ctrl-h do)
+	// per-cursor behaviour, depending on position (join lines)
 	em.Editor.Buffer.RemoveRuneBeforeCursors(em.Editor.Cursors)
 	em.Editor.Cursors.Move(em.Editor.Buffer, ovim.CursorLeft)
 
