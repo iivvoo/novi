@@ -48,8 +48,7 @@ func (em *Basic) Backspace() {
 			em.Editor.Buffer.RemoveRuneBeforeCursors(em.Editor.Cursors)
 			c.Move(em.Editor.Buffer, ovim.CursorLeft)
 		} else if c.Line > 0 {
-			log.Printf("Joining %d with %d", c.Line, c.Line-1)
-			// first move the cursor
+			// first move the cursor so we can use CursorEnd to move to the desired position
 			l := c.Line
 			c.Move(em.Editor.Buffer, ovim.CursorUp)
 			c.Move(em.Editor.Buffer, ovim.CursorEnd)
@@ -85,6 +84,9 @@ func (em *Basic) HandleEvent(event ovim.Event) bool {
 				em.Backspace()
 			case 'q':
 				return false
+			case 's':
+				em.Editor.SaveFile()
+				log.Println("File saved")
 			default:
 				log.Printf("Don't know what to do with control key %+v %c", ev, ev.Rune)
 			}
