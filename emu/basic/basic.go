@@ -45,7 +45,7 @@ func NewBasic(e *ovim.Editor) *Basic {
 func (em *Basic) Backspace() {
 	for _, c := range em.Editor.Cursors {
 		if c.Pos > 0 {
-			em.Editor.Buffer.RemoveRuneBeforeCursors(em.Editor.Cursors)
+			em.Editor.Buffer.RemoveRuneBeforeCursor(c)
 			c.Move(em.Editor.Buffer, ovim.CursorLeft)
 		} else if c.Line > 0 {
 			// first move the cursor so we can use CursorEnd to move to the desired position

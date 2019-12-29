@@ -67,15 +67,13 @@ func (b *Buffer) PutRuneAtCursors(cs Cursors, r rune) {
 	}
 }
 
-func (b *Buffer) RemoveRuneBeforeCursors(cs Cursors) {
+func (b *Buffer) RemoveRuneBeforeCursor(c *Cursor) {
 	// We can't really do all cursors at once. Perhaps let caller always loop?
 	// optionally, Cursors.all(func() {})
-	for _, c := range cs {
-		if c.Pos > 0 {
-			line := b.Lines[c.Line]
-			line = append(line[:c.Pos-1], line[c.Pos:]...)
-			b.Lines[c.Line] = line
-		}
+	if c.Pos > 0 {
+		line := b.Lines[c.Line]
+		line = append(line[:c.Pos-1], line[c.Pos:]...)
+		b.Lines[c.Line] = line
 	}
 }
 
@@ -108,7 +106,7 @@ func (b *Buffer) RemoveLine(line int) bool {
 	return true
 }
 
-/* JoinLineWitPrevious
+/* JoinLineWithPrevious
  *
  * Join two lines: the one on the given position with the one before
  */
