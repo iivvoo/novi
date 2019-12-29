@@ -29,8 +29,9 @@ import (
 var log = logger.GetLogger("editor")
 
 type Editor struct {
-	Buffer  *Buffer
-	Cursors Cursors
+	filename string
+	Buffer   *Buffer
+	Cursors  Cursors
 }
 
 func NewEditor() *Editor {
@@ -52,15 +53,23 @@ func (e *Editor) LoadFile(name string) {
 	for scanner.Scan() {
 		e.Buffer.AddLine(Line(scanner.Text()))
 	}
+	e.filename = name
 }
 
 // SaveFile saves the buffer to a file
 func (e *Editor) SaveFile() {
 	// todo: take from buffer, optionally ask for name
-	fname := "/tmp/out1.txt"
-	f, err := os.Create(fname)
+	if e.filename == "" {
+		log.Println("No filename set on buffer, can't save")
+		return
+	}
+	if err := CopyFile(e.filename, e.filename+".bak"); err != nil {
+		log.Printf("Failed to make backup copy for %s: %v", e.filename, err)
+		return
+	}
+	f, err := os.Create(e.filename)
 	if err != nil {
-		log.Printf("Failed to open/create %s: %v", fname, err)
+		log.Printf("Failed to open/create %s: %v", e.filename, err)
 		return
 	}
 	defer f.Close()
@@ -69,13 +78,13 @@ func (e *Editor) SaveFile() {
 
 	for _, line := range e.Buffer.Lines {
 		if _, err := w.WriteString(string(line) + "\n"); err != nil {
-			log.Printf("Failed to Write %s: %v", fname, err)
+			log.Printf("Failed to Write %s: %v", e.filename, err)
 			return
 		}
 
 	}
 	if err := w.Flush(); err != nil {
-		log.Printf("Failed to Flush %s: %v", fname, err)
+		log.Printf("Failed to Flush %s: %v", e.filename, err)
 	}
 }
 

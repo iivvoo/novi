@@ -2,6 +2,8 @@ package ovim
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"runtime/debug"
 	"strings"
 )
@@ -43,4 +45,21 @@ func RecoverFromPanic(cleanup func()) {
 		}
 		fmt.Printf("%s\n", r)
 	}
+}
+
+func CopyFile(src, dst string) error {
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer sourceFile.Close()
+
+	newFile, err := os.Create(dst)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer newFile.Close()
+
+	_, err = io.Copy(newFile, sourceFile)
+	return err
 }
