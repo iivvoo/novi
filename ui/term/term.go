@@ -23,8 +23,7 @@ type TermUI struct {
 	Width          int
 	Height         int
 
-	Status1 string
-	Status2 string
+	Status string
 }
 
 func NewTermUI(Editor *ovim.Editor) *TermUI {
@@ -42,10 +41,20 @@ func NewTermUI(Editor *ovim.Editor) *TermUI {
 	}
 	s.Show()
 
-	tui := &TermUI{s, Editor, 0, 0, 40, 10, -1, -1,
-		"Status 1 bla bla",
-		"Status 2 bla bla"}
+	w, h := s.Size()
+	// adjust for statusbars and box, to be fixed XXX
+	tui := &TermUI{s, Editor, 0, 0, w - 1, h - 3, w, h, ""}
 	return tui
+}
+
+func (t *TermUI) SetSize(width, height int) {
+	if width == 0 || height == 0 {
+		log.Printf("Can't set a width or height of 0: %d %d", width, height)
+		return
+	}
+	t.EditAreaWidth = width
+	t.EditAreaHeight = height
+	log.Printf("EditArea width, heigth set to %d, %d", width, height)
 }
 
 func (t *TermUI) Finish() {
@@ -177,7 +186,7 @@ func (t *TermUI) Loop(c chan ovim.Event) {
 }
 
 func (t *TermUI) SetStatus(status string) {
-	t.Status2 = status
+	t.Status = status
 }
 
 func (t *TermUI) DrawBox() {
@@ -190,15 +199,17 @@ func (t *TermUI) DrawBox() {
 	t.Screen.SetContent(t.EditAreaWidth, t.EditAreaHeight, '+', nil, tcell.StyleDefault)
 }
 
-func (t *TermUI) DrawStatusbar(bar string, pos int) {
-	for i, r := range bar {
-		t.Screen.SetContent(i, t.Height+pos-1, r, nil, tcell.StyleDefault)
+func (t *TermUI) DrawStatusbar() {
+	x := 0
+	for _, r := range t.Status { // XXX May overflow
+		t.Screen.SetContent(x, t.Height-1, r, nil, tcell.StyleDefault)
+		x++
 	}
-}
+	for x < t.EditAreaWidth {
+		t.Screen.SetContent(x, t.Height-1, ' ', nil, tcell.StyleDefault)
+		x++
 
-func (t *TermUI) DrawStatusbars() {
-	t.DrawStatusbar(t.Status1, -1)
-	t.DrawStatusbar(t.Status2, 0)
+	}
 }
 
 /*
@@ -223,9 +234,7 @@ func (t *TermUI) Render() {
 		t.ViewportY = primaryCursor.Line
 	}
 
-	t.Status1 = fmt.Sprintf("Term: vp %d %d size %d %d", t.ViewportX, t.ViewportY,
-		t.Width, t.Height)
-	t.DrawStatusbars()
+	t.DrawStatusbar()
 
 	t.DrawBox()
 
@@ -233,17 +242,24 @@ func (t *TermUI) Render() {
 	 * Print the text within the current viewports, padding lines with `fillRune`
 	 * to clear any remainders. THe latter is relevant when scrolling, for example
 	 */
-	fillRune := '~'
-	for y, line := range t.Editor.Buffer.GetLines(t.ViewportY, t.ViewportY+t.EditAreaHeight) {
+	y := 0
+	for _, line := range t.Editor.Buffer.GetLines(t.ViewportY, t.ViewportY+t.EditAreaHeight) {
 		x := 0
 		for _, rune := range line.GetRunes(t.ViewportX, t.ViewportX+t.EditAreaWidth) {
 			t.Screen.SetContent(x, y, rune, nil, tcell.StyleDefault)
 			x++
 		}
 		for x < t.EditAreaWidth {
-			t.Screen.SetContent(x, y, fillRune, nil, tcell.StyleDefault)
+			t.Screen.SetContent(x, y, ' ', nil, tcell.StyleDefault)
 			x++
 		}
+		y++
+	}
+	for y < t.EditAreaHeight {
+		for x := 0; x < t.EditAreaWidth; x++ {
+			t.Screen.SetContent(x, y, ' ', nil, tcell.StyleDefault)
+		}
+		y++
 	}
 	// To make the cursor blink, show/hide it?
 	for _, cursor := range t.Editor.Cursors {
