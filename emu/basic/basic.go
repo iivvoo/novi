@@ -1,6 +1,8 @@
 package basicemu
 
 import (
+	"fmt"
+
 	"gitlab.com/iivvoo/ovim/logger"
 	"gitlab.com/iivvoo/ovim/ovim"
 )
@@ -114,4 +116,11 @@ func (em *Basic) HandleEvent(event ovim.Event) bool {
 		log.Printf("Don't know what to do with event %+v", ev)
 	}
 	return true
+}
+
+func (em *Basic) GetStatus(width int) string {
+	first := em.Editor.Cursors[0]
+	// Make use of width to align cursor row/col right. Truncate if necessary
+	return fmt.Sprintf("%s (changed?) row %d col %d (INS)",
+		em.Editor.GetFilename(), first.Line+1, first.Pos+1)
 }

@@ -47,6 +47,10 @@ func NewTermUI(Editor *ovim.Editor) *TermUI {
 	return tui
 }
 
+func (t *TermUI) GetDimension() (int, int) {
+	return t.EditAreaWidth, t.EditAreaHeight
+}
+
 func (t *TermUI) SetSize(width, height int) {
 	if width == 0 || height == 0 {
 		log.Printf("Can't set a width or height of 0: %d %d", width, height)

@@ -1,9 +1,8 @@
 package ovim
 
-import "fmt"
-
 type Emulation interface {
 	HandleEvent(Event) bool
+	GetStatus(int) string
 }
 
 type UI interface {
@@ -11,6 +10,7 @@ type UI interface {
 	Loop(chan Event)
 	SetStatus(string)
 	Render()
+	GetDimension() (int, int)
 }
 
 type Core struct {
@@ -29,6 +29,10 @@ func (c *Core) Loop() {
 	c.UI.Render()
 	c.UI.Loop(eventChan)
 	for {
+		width, _ := c.UI.GetDimension()
+		status := c.Emulation.GetStatus(width)
+		c.UI.SetStatus(status)
+		c.UI.Render()
 		ev := <-eventChan
 		// Filter event on what emulation subscribes to
 		// invoke plugins/extensions in some order
@@ -36,11 +40,6 @@ func (c *Core) Loop() {
 			break
 		}
 
-		first := c.Editor.Cursors[0]
-		row, col := first.Line, first.Pos
-		lines := c.Editor.Buffer.Length()
-		c.UI.SetStatus(fmt.Sprintf("Edit: r %d c %d lines %d", row, col, lines))
-		c.UI.Render()
 	}
 
 }

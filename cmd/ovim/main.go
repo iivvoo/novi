@@ -9,6 +9,7 @@ import (
 	"time"
 
 	basicemu "gitlab.com/iivvoo/ovim/emu/basic"
+	viemu "gitlab.com/iivvoo/ovim/emu/vi"
 	"gitlab.com/iivvoo/ovim/logger"
 	"gitlab.com/iivvoo/ovim/ovim"
 	termui "gitlab.com/iivvoo/ovim/ui/term"
@@ -18,15 +19,17 @@ var log = logger.GetLogger("main")
 
 func start() {
 
-	var sizeStr string
+	var sizeFlag string
+	var emuFlag string
 	var w, h int
 	var err error
 
-	flag.StringVar(&sizeStr, "area", "", "Edit area size")
+	flag.StringVar(&sizeFlag, "area", "", "Edit area size")
+	flag.StringVar(&emuFlag, "emu", "basic", "Emulation to use")
 
 	flag.Parse()
-	if sizeStr != "" {
-		p := strings.SplitN(sizeStr, "x", 2)
+	if sizeFlag != "" {
+		p := strings.SplitN(sizeFlag, "x", 2)
 		if len(p) != 2 {
 			panic("area")
 		}
@@ -61,7 +64,13 @@ func start() {
 	editor.LoadFile(fileName)
 	editor.SetCursor(8, 0)
 
-	emu := basicemu.NewBasic(editor)
+	var emu ovim.Emulation
+
+	if emuFlag == "vi" {
+		emu = viemu.NewVi(editor)
+	} else {
+		emu = basicemu.NewBasic(editor)
+	}
 	core := ovim.NewCore(editor, ui, emu)
 	core.Loop()
 	ui.Finish()

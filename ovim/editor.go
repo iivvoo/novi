@@ -40,6 +40,10 @@ func NewEditor() *Editor {
 	return e
 }
 
+func (e *Editor) GetFilename() string {
+	return e.filename
+}
+
 func (e *Editor) LoadFile(name string) {
 	// reset everything
 
@@ -86,6 +90,10 @@ func (e *Editor) SaveFile() {
 	if err := w.Flush(); err != nil {
 		log.Printf("Failed to Flush %s: %v", e.filename, err)
 	}
+}
+
+func (e *Editor) SetStatus(status string) {
+
 }
 
 // SetCursor sets the first cursor at a specific position
