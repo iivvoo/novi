@@ -61,7 +61,7 @@ type KeyEvent struct {
 
 func (e KeyEvent) Equals(other Event) bool {
 	if ke, ok := other.(KeyEvent); ok {
-		return ke.Modifier == e.Modifier && ke.Key == e.Key && ke.Rune == e.Rune
+		return ke.Modifier == e.Modifier && ke.Key == e.Key && (ke.Rune == 0 || ke.Rune == e.Rune)
 	}
 	return false
 }
@@ -72,7 +72,7 @@ type CharacterEvent struct {
 
 func (e CharacterEvent) Equals(other Event) bool {
 	if ce, ok := other.(CharacterEvent); ok {
-		return ce.Rune == e.Rune
+		return ce.Rune == 0 || ce.Rune == e.Rune
 	}
 	return false
 }

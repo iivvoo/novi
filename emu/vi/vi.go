@@ -1,13 +1,16 @@
 package viemu
 
 import (
+	"fmt"
+
 	"gitlab.com/iivvoo/ovim/logger"
 	"gitlab.com/iivvoo/ovim/ovim"
 )
 
 /*
  * Lots of stuff to do. Start with basic non-ex (?) commands, controls:
- * insert: iIoO
+ * insert: iIoOaA
+ * backspace (similar behaviour as basic when joining lines)
  * regular character insertion in edit mode
  * copy/paste (non/term/mouse: y, p etc)
  * commands: d10d, c5w, 10x, etc.
@@ -34,13 +37,10 @@ type Dispatch struct {
 func (d Dispatch) Do(event ovim.Event, mode ViMode) bool {
 	if event.Equals(d.Event) && (d.Mode == ModeAny || d.Mode == mode) {
 		d.Handler(event)
-		log.Printf("Individual match %v %v", event, d)
 		return true
 	}
 	for _, e := range d.Events {
-		log.Printf("Events match %v %v", event, e)
 		if event.Equals(e) && (d.Mode == ModeAny || d.Mode == mode) {
-			log.Printf("Multi match %v %v", event, d)
 			d.Handler(e)
 			return true
 		}
@@ -70,6 +70,7 @@ func NewVi(e *ovim.Editor) *Vi {
 			ovim.CharacterEvent{Rune: 'j'},
 			ovim.CharacterEvent{Rune: 'k'},
 			ovim.CharacterEvent{Rune: 'l'}}, Handler: em.HandleMoveHJKLCursors},
+		Dispatch{Mode: ModeEdit, Event: ovim.CharacterEvent{}, Handler: em.HandleAnyRune},
 	}
 	em.dispatch = dispatch
 	return em
@@ -93,6 +94,14 @@ func (em *Vi) HandleMoveHJKLCursors(ev ovim.Event) {
 	}
 	em.Editor.Cursors.Move(em.Editor.Buffer, m[r])
 }
+
+// HandleAnyRune simply inserts the character in edit mode
+func (em *Vi) HandleAnyRune(ev ovim.Event) {
+	r := ev.(*ovim.CharacterEvent).Rune
+	em.Editor.Buffer.PutRuneAtCursors(em.Editor.Cursors, r)
+	em.Editor.Cursors.Move(em.Editor.Buffer, ovim.CursorRight)
+}
+
 func (em *Vi) HandleMoveCursors(ev ovim.Event) {
 	em.Editor.MoveCursor(ev.(ovim.KeyEvent).Key)
 }
@@ -100,7 +109,7 @@ func (em *Vi) HandleMoveCursors(ev ovim.Event) {
 func (em *Vi) HandleEvent(event ovim.Event) bool {
 	for _, d := range em.dispatch {
 		log.Printf("Match %v against %v\n", event, d)
-		if d.Do(event, d.Mode) {
+		if d.Do(event, em.Mode) {
 			log.Printf("  .. match!")
 			return true
 		}
@@ -109,8 +118,11 @@ func (em *Vi) HandleEvent(event ovim.Event) bool {
 }
 
 func (em *Vi) GetStatus(width int) string {
+	mode := ""
+	first := em.Editor.Cursors[0]
 	if em.Mode == ModeEdit {
-		return "--INSERT-- 10,20 (fake)"
+		mode = "--INSERT-- "
 	}
-	return "10,20 (fake)"
+	return mode + fmt.Sprintf("%s (changed?) row %d col %d",
+		em.Editor.GetFilename(), first.Line+1, first.Pos+1)
 }
