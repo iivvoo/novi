@@ -49,7 +49,9 @@ const (
 	*/
 )
 
-type Event interface{}
+type Event interface {
+	Equals(Event) bool
+}
 
 type KeyEvent struct {
 	Modifier KeyModifier
@@ -57,6 +59,20 @@ type KeyEvent struct {
 	Rune     rune
 }
 
+func (e KeyEvent) Equals(other Event) bool {
+	if ke, ok := other.(KeyEvent); ok {
+		return ke.Modifier == e.Modifier && ke.Key == e.Key && ke.Rune == e.Rune
+	}
+	return false
+}
+
 type CharacterEvent struct {
 	Rune rune
+}
+
+func (e CharacterEvent) Equals(other Event) bool {
+	if ce, ok := other.(CharacterEvent); ok {
+		return ce.Rune == e.Rune
+	}
+	return false
 }
