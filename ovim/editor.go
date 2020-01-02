@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"os"
 
-	"gitlab.com/iivvoo/ovim/logger"
+	"github.com/iivvoo/ovim/logger"
 )
 
 /*

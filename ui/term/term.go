@@ -6,8 +6,8 @@ import (
 
 	"github.com/gdamore/tcell"
 	"github.com/gdamore/tcell/encoding"
-	"gitlab.com/iivvoo/ovim/logger"
-	"gitlab.com/iivvoo/ovim/ovim"
+	"github.com/iivvoo/ovim/logger"
+	"github.com/iivvoo/ovim/ovim"
 )
 
 var log = logger.GetLogger("termui")

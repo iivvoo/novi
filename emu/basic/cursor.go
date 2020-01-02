@@ -1,7 +1,7 @@
 package basicemu
 
 import (
-	"gitlab.com/iivvoo/ovim/ovim"
+	"github.com/iivvoo/ovim/ovim"
 )
 
 // Move moves the cursor in the specified direction

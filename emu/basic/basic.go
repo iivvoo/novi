@@ -3,8 +3,8 @@ package basicemu
 import (
 	"fmt"
 
-	"gitlab.com/iivvoo/ovim/logger"
-	"gitlab.com/iivvoo/ovim/ovim"
+	"github.com/iivvoo/ovim/logger"
+	"github.com/iivvoo/ovim/ovim"
 )
 
 var log = logger.GetLogger("basicemu")

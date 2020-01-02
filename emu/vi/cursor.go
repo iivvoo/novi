@@ -1,7 +1,7 @@
 package viemu
 
 import (
-	"gitlab.com/iivvoo/ovim/ovim"
+	"github.com/iivvoo/ovim/ovim"
 )
 
 // Move moves the cursor the way Vi would do it

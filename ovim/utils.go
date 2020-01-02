@@ -19,7 +19,7 @@ func RecoverFromPanic(cleanup func()) {
 		       /projects/ovim/cmd/ovim/main.go:65 +0x8d
 				panic(0x584f40, 0xc0000d0120)
 		       /opt/go1.13.1/src/runtime/panic.go:679 +0x1b2
-				gitlab.com/iivvoo/ovim/ovim.(*TermUI).RenderTerm(0xc0000b8700)
+				github.com/iivvoo/ovim/ovim.(*TermUI).RenderTerm(0xc0000b8700)
 		       /projects/ovim/ovim/term.go:90 +0x487
 				main.start.func1(0xc0000882a0, 0x5c3de0, 0xc00012a000, 0xc00008c720, 0xc0000b8700)
 		       /projects/ovim/cmd/ovim/main.go:110 +0x229

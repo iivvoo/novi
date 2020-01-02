@@ -1,4 +1,4 @@
-module gitlab.com/iivvoo/ovim
+module github.com/iivvoo/ovim
 
 go 1.13
 

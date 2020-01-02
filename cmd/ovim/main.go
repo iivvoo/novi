@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	basicemu "gitlab.com/iivvoo/ovim/emu/basic"
-	viemu "gitlab.com/iivvoo/ovim/emu/vi"
-	"gitlab.com/iivvoo/ovim/logger"
-	"gitlab.com/iivvoo/ovim/ovim"
-	termui "gitlab.com/iivvoo/ovim/ui/term"
+	basicemu "github.com/iivvoo/ovim/emu/basic"
+	viemu "github.com/iivvoo/ovim/emu/vi"
+	"github.com/iivvoo/ovim/logger"
+	"github.com/iivvoo/ovim/ovim"
+	termui "github.com/iivvoo/ovim/ui/term"
 )
 
 var log = logger.GetLogger("main")

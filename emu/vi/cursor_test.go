@@ -3,7 +3,7 @@ package viemu
 import (
 	"testing"
 
-	"gitlab.com/iivvoo/ovim/ovim"
+	"github.com/iivvoo/ovim/ovim"
 )
 
 func TestCursorMove(t *testing.T) {
