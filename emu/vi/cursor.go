@@ -4,6 +4,7 @@ import (
 	"gitlab.com/iivvoo/ovim/ovim"
 )
 
+// Move moves the cursor the way Vi would do it
 func Move(b *ovim.Buffer, c *ovim.Cursor, movement ovim.CursorDirection) {
 	switch movement {
 	case ovim.CursorUp:
