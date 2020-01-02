@@ -97,35 +97,32 @@ func (em *Vi) HandleToModeEdit(ev ovim.Event) {
 	first := em.Editor.Cursors[0]
 
 	switch r {
-	case 'i':
-		break // just insert at current cursor position
-	case 'I':
-		// insert at beginning of line
+	case 'i': // just insert at current cursor position
+		break
+	case 'I': // insert at beginning of line
 		em.Editor.Cursors.Move(em.Editor.Buffer, ovim.CursorBegin)
-	case 'o':
-		// add line below current line
+	case 'o': // add line below current line
 		// XXX TODO preserve indent (depend on indent mode?)
 		em.Editor.Buffer.InsertLine(first, "", false)
 		em.Editor.Cursors.Move(em.Editor.Buffer, ovim.CursorDown)
-	case 'O':
-		// add line above cursor
+	case 'O': // add line above cursor
 		// XXX TODO preserve indent (depend on indent mode?)
 		em.Editor.Buffer.InsertLine(first, "", true)
 		// The cursor will already be at the inserted line, but may need to move to the start
 		em.Editor.Cursors.Move(em.Editor.Buffer, ovim.CursorBegin)
-	case 'a':
-		// after cursor
+	case 'a': // after cursor
 		em.Editor.Cursors.Move(em.Editor.Buffer, ovim.CursorRight)
-	case 'A':
-		// at end
+	case 'A': // at end
 		em.Editor.Cursors.Move(em.Editor.Buffer, ovim.CursorEnd)
 	}
 }
 
+// HandleToModeCommand simply switches (back) to command mode
 func (em *Vi) HandleToModeCommand(ovim.Event) {
 	em.Mode = ModeCommand
 }
 
+// HandleMoveHJKLCursors hjkl can be used as cursor keys in command mode
 func (em *Vi) HandleMoveHJKLCursors(ev ovim.Event) {
 	r := ev.(ovim.CharacterEvent).Rune
 
