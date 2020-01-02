@@ -77,5 +77,16 @@ func TestCursorMove(t *testing.T) {
 		ovim.AssertCursor(t, c, 6, 3)
 	})
 
-	// left/right should actualy go to prev/next line, if possible
+	t.Run("Move cursor Left at begin", func(t *testing.T) {
+		c := &ovim.Cursor{Line: 6, Pos: 0}
+		Move(b, c, ovim.CursorLeft)
+
+		ovim.AssertCursor(t, c, 5, 16)
+	})
+	t.Run("Move cursor Right at end", func(t *testing.T) {
+		c := &ovim.Cursor{Line: 5, Pos: 16}
+		Move(b, c, ovim.CursorRight)
+
+		ovim.AssertCursor(t, c, 6, 0)
+	})
 }

@@ -5,7 +5,6 @@ import (
 )
 
 // Move moves the cursor in the specified direction
-// TODO: left/right can move to adjecent line
 func Move(b *ovim.Buffer, c *ovim.Cursor, movement ovim.CursorDirection) {
 	switch movement {
 	case ovim.CursorUp:
@@ -26,10 +25,16 @@ func Move(b *ovim.Buffer, c *ovim.Cursor, movement ovim.CursorDirection) {
 	case ovim.CursorLeft:
 		if c.Pos > 0 {
 			c.Pos--
+		} else if c.Line > 0 {
+			c.Line--
+			c.Pos = len(b.Lines[c.Line])
 		}
 	case ovim.CursorRight:
 		if c.Pos < len(b.Lines[c.Line]) {
 			c.Pos++
+		} else if c.Line < len(b.Lines)-1 {
+			c.Line++
+			c.Pos = 0
 		}
 	case ovim.CursorBegin:
 		c.Pos = 0
@@ -37,5 +42,4 @@ func Move(b *ovim.Buffer, c *ovim.Cursor, movement ovim.CursorDirection) {
 		// move *past* the end
 		c.Pos = len(b.Lines[c.Line])
 	}
-
 }
