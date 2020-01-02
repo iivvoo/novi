@@ -19,18 +19,23 @@ import (
  * Could/should we support multiple cursors for vi emulation?
  * vim itself provides ctrl-v which is a bit like a multi-cursor, but not all command work on it
  *  (e.g. o or O have no effect. 'i' does have effecti, 'a' doesn't. Perhaps vim limitation?)
+ *
+ * '.' replays last command - we need a way to "store" this (is storing the keypresses sufficient?)
  */
 
 var log = logger.GetLogger("viemu")
 
+// ViMode is the current mode of operation
 type ViMode int
 
+// It currently has these modes
 const (
 	ModeAny ViMode = iota
 	ModeEdit
 	ModeCommand
 )
 
+// Dispatch maps a Key/CharacterEvent to a handler
 type Dispatch struct {
 	Mode    ViMode
 	Event   ovim.Event
@@ -38,6 +43,7 @@ type Dispatch struct {
 	Handler func(ovim.Event)
 }
 
+// Do calls the handler if the event matches
 func (d Dispatch) Do(event ovim.Event, mode ViMode) bool {
 	if event.Equals(d.Event) && (d.Mode == ModeAny || d.Mode == mode) {
 		d.Handler(event)
@@ -52,6 +58,7 @@ func (d Dispatch) Do(event ovim.Event, mode ViMode) bool {
 	return false
 }
 
+// Vi encapsulate all the Vi emulation state
 type Vi struct {
 	Editor *ovim.Editor
 	Mode   ViMode
@@ -151,12 +158,14 @@ func (em *Vi) HandleAnyRune(ev ovim.Event) {
 	}
 }
 
+// HandleMoveCursors moves the cursors based on the given event
 func (em *Vi) HandleMoveCursors(ev ovim.Event) {
 	for _, c := range em.Editor.Cursors {
 		Move(em.Editor.Buffer, c, ovim.CursorMap[ev.(ovim.KeyEvent).Key])
 	}
 }
 
+// HandleEvent is the main entry point
 func (em *Vi) HandleEvent(event ovim.Event) bool {
 	for _, d := range em.dispatch {
 		if d.Do(event, em.Mode) {
@@ -166,6 +175,7 @@ func (em *Vi) HandleEvent(event ovim.Event) bool {
 	return false
 }
 
+// GetStatus provides a way for the Editor to get the emulation's status
 func (em *Vi) GetStatus(width int) string {
 	mode := ""
 	first := em.Editor.Cursors[0]
