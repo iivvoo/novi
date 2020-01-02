@@ -62,6 +62,20 @@ func TestCursorMove(t *testing.T) {
 		ovim.AssertCursor(t, c, 3, 0)
 	})
 
+	// move to adjecent lines
+	t.Run("Move cursor Left at begin", func(t *testing.T) {
+		c := &ovim.Cursor{Line: 6, Pos: 0}
+		Move(b, c, ovim.CursorLeft)
+
+		ovim.AssertCursor(t, c, 5, 16)
+	})
+	t.Run("Move cursor Right at end", func(t *testing.T) {
+		c := &ovim.Cursor{Line: 5, Pos: 16}
+		Move(b, c, ovim.CursorRight)
+
+		ovim.AssertCursor(t, c, 6, 0)
+	})
+
 	// corner cases
 	t.Run("Move cursor UP at boundary", func(t *testing.T) {
 		c := &ovim.Cursor{Line: 0, Pos: 3}
@@ -77,16 +91,17 @@ func TestCursorMove(t *testing.T) {
 		ovim.AssertCursor(t, c, 6, 3)
 	})
 
-	t.Run("Move cursor Left at begin", func(t *testing.T) {
-		c := &ovim.Cursor{Line: 6, Pos: 0}
+	t.Run("Move cursor Left at 0,0", func(t *testing.T) {
+		c := &ovim.Cursor{Line: 0, Pos: 0}
 		Move(b, c, ovim.CursorLeft)
 
-		ovim.AssertCursor(t, c, 5, 16)
+		ovim.AssertCursor(t, c, 0, 0)
 	})
-	t.Run("Move cursor Right at end", func(t *testing.T) {
-		c := &ovim.Cursor{Line: 5, Pos: 16}
+
+	t.Run("Move cursor Right at complete end", func(t *testing.T) {
+		c := &ovim.Cursor{Line: 6, Pos: 9}
 		Move(b, c, ovim.CursorRight)
 
-		ovim.AssertCursor(t, c, 6, 0)
+		ovim.AssertCursor(t, c, 6, 9)
 	})
 }
