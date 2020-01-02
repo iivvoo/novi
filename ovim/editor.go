@@ -2,7 +2,6 @@ package ovim
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 
 	"gitlab.com/iivvoo/ovim/logger"
@@ -103,18 +102,11 @@ func (e *Editor) SetCursor(row, col int) {
 
 }
 
-func (e *Editor) MoveCursor(movement KeyType) {
-	m := map[KeyType]CursorDirection{
-		KeyLeft:  CursorLeft,
-		KeyRight: CursorRight,
-		KeyUp:    CursorUp,
-		KeyDown:  CursorDown,
-	}
-
-	if direction, ok := m[movement]; ok {
-		e.Cursors.Move(e.Buffer, direction)
-
-	} else {
-		panic(fmt.Sprintf("Can't map key %v to a direction", movement))
-	}
+var CursorMap = map[KeyType]CursorDirection{
+	KeyLeft:  CursorLeft,
+	KeyRight: CursorRight,
+	KeyUp:    CursorUp,
+	KeyDown:  CursorDown,
+	KeyHome:  CursorBegin,
+	KeyEnd:   CursorEnd,
 }

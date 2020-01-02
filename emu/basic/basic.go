@@ -48,21 +48,19 @@ func (em *Basic) Backspace() {
 	for _, c := range em.Editor.Cursors {
 		if c.Pos > 0 {
 			em.Editor.Buffer.RemoveRuneBeforeCursor(c)
-			c.Move(em.Editor.Buffer, ovim.CursorLeft)
+			Move(em.Editor.Buffer, c, ovim.CursorLeft)
 		} else if c.Line > 0 {
 			// first move the cursor so we can use CursorEnd to move to the desired position
 			l := c.Line
-			c.Move(em.Editor.Buffer, ovim.CursorUp)
-			c.Move(em.Editor.Buffer, ovim.CursorEnd)
+			Move(em.Editor.Buffer, c, ovim.CursorUp)
+			Move(em.Editor.Buffer, c, ovim.CursorEnd)
 			em.Editor.Buffer.JoinLineWithPrevious(l)
 
 			// adjust all other cursors that are on/after l
 			// XXX Untested
-			for _, cc := range em.Editor.Cursors {
-				// all *other*!
-				if cc != c {
-					cc.Move(em.Editor.Buffer, ovim.CursorUp)
-				}
+			// XXX also wrong, also changes cursors *before* line.
+			for _, cc := range em.Editor.Cursors.After(c) {
+				Move(em.Editor.Buffer, cc, ovim.CursorUp)
 			}
 		}
 	}
@@ -100,18 +98,24 @@ func (em *Basic) HandleEvent(event ovim.Event) bool {
 				em.Backspace()
 			case ovim.KeyEnter:
 				em.Editor.Buffer.SplitLines(em.Editor.Cursors)
-				// multiple down with multiple cursors! XXX
-				em.Editor.Cursors.Move(em.Editor.Buffer, ovim.CursorDown)
-				em.Editor.Cursors.Move(em.Editor.Buffer, ovim.CursorBegin)
-			case ovim.KeyLeft, ovim.KeyRight, ovim.KeyUp, ovim.KeyDown:
-				em.Editor.MoveCursor(ev.Key)
+				// Incorrect multi cursor behaviour, new lines affect all following cursors!
+				for _, c := range em.Editor.Cursors {
+					Move(em.Editor.Buffer, c, ovim.CursorDown)
+					Move(em.Editor.Buffer, c, ovim.CursorBegin)
+				}
+			case ovim.KeyLeft, ovim.KeyRight, ovim.KeyUp, ovim.KeyDown, ovim.KeyHome, ovim.KeyEnd:
+				for _, c := range em.Editor.Cursors {
+					Move(em.Editor.Buffer, c, ovim.CursorMap[ev.Key])
+				}
 			default:
 				log.Printf("Don't know what to do with key event %+v", ev)
 			}
 		}
 	case *ovim.CharacterEvent:
 		em.Editor.Buffer.PutRuneAtCursors(em.Editor.Cursors, ev.Rune)
-		em.Editor.Cursors.Move(em.Editor.Buffer, ovim.CursorRight)
+		for _, c := range em.Editor.Cursors {
+			Move(em.Editor.Buffer, c, ovim.CursorRight)
+		}
 	default:
 		log.Printf("Don't know what to do with event %+v", ev)
 	}

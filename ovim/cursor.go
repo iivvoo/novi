@@ -28,6 +28,7 @@ type Cursor struct {
 // CursorDirection defines the direction a cursor can go
 type CursorDirection uint8
 
+// The different directions a Cursor can move to
 const (
 	CursorLeft CursorDirection = iota
 	CursorRight
@@ -37,45 +38,27 @@ const (
 	CursorEnd
 )
 
+// Cursors is a collection of cursors
 type Cursors []*Cursor
 
-func (cs Cursors) Move(b *Buffer, movement CursorDirection) {
-	for _, c := range cs {
-		c.Move(b, movement)
+// After returns all cursors that are "after" c
+func (cs Cursors) After(c *Cursor) Cursors {
+	var result Cursors
+	for _, cc := range cs {
+		if cc.Line > c.Line || (cc.Line == c.Line && c.Pos > cc.Pos) {
+			result = append(result, cc)
+		}
 	}
+	return result
 }
 
-func (c *Cursor) Move(b *Buffer, movement CursorDirection) {
-	switch movement {
-	case CursorUp:
-		if c.Line > 0 {
-			c.Line--
-			if c.Pos > len(b.Lines[c.Line]) {
-				c.Pos = len(b.Lines[c.Line])
-			}
+// Before returns all cursors that are "before" c
+func (cs Cursors) Before(c *Cursor) Cursors {
+	var result Cursors
+	for _, cc := range cs {
+		if cc.Line < c.Line || (cc.Line == c.Line && c.Pos < cc.Pos) {
+			result = append(result, cc)
 		}
-	case CursorDown:
-		// weirdness because empty last line that we want to position on
-		if c.Line < len(b.Lines)-1 {
-			c.Line++
-			if c.Pos > len(b.Lines[c.Line]) {
-				c.Pos = len(b.Lines[c.Line])
-			}
-		}
-	case CursorLeft:
-		if c.Pos > 0 {
-			c.Pos--
-		}
-	case CursorRight:
-		if c.Pos < len(b.Lines[c.Line]) {
-			c.Pos++
-		}
-	case CursorBegin:
-		c.Pos = 0
-	case CursorEnd:
-		c.Pos = len(b.Lines[c.Line])
 	}
-
+	return result
 }
-
-// MoveEnd, MoveStart - move all cursors to end/start of line

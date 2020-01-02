@@ -9,7 +9,7 @@ import (
 
 /*
  * Lots of stuff to do. Start with basic non-ex (?) commands, controls:
- * insert: iIoOaA
+ * insert: iIoOaA OK (single cursor)
  * backspace (similar behaviour as basic when joining lines)
  * regular character insertion in edit mode
  * copy/paste (non/term/mouse: y, p etc)
@@ -59,6 +59,7 @@ type Vi struct {
 	dispatch []Dispatch
 }
 
+// NewVi creates/setups up a new Vi emulation instance
 func NewVi(e *ovim.Editor) *Vi {
 	em := &Vi{Editor: e, Mode: ModeCommand}
 	dispatch := []Dispatch{
@@ -76,7 +77,10 @@ func NewVi(e *ovim.Editor) *Vi {
 			ovim.KeyEvent{Key: ovim.KeyLeft},
 			ovim.KeyEvent{Key: ovim.KeyRight},
 			ovim.KeyEvent{Key: ovim.KeyUp},
-			ovim.KeyEvent{Key: ovim.KeyDown}}, Handler: em.HandleMoveCursors},
+			ovim.KeyEvent{Key: ovim.KeyDown},
+			ovim.KeyEvent{Key: ovim.KeyEnd},
+			ovim.KeyEvent{Key: ovim.KeyHome},
+		}, Handler: em.HandleMoveCursors},
 		Dispatch{Mode: ModeCommand, Events: []ovim.Event{
 			ovim.CharacterEvent{Rune: 'h'},
 			ovim.CharacterEvent{Rune: 'j'},
@@ -100,20 +104,21 @@ func (em *Vi) HandleToModeEdit(ev ovim.Event) {
 	case 'i': // just insert at current cursor position
 		break
 	case 'I': // insert at beginning of line
-		em.Editor.Cursors.Move(em.Editor.Buffer, ovim.CursorBegin)
+		Move(em.Editor.Buffer, first, ovim.CursorBegin)
 	case 'o': // add line below current line
 		// XXX TODO preserve indent (depend on indent mode?)
 		em.Editor.Buffer.InsertLine(first, "", false)
-		em.Editor.Cursors.Move(em.Editor.Buffer, ovim.CursorDown)
+		Move(em.Editor.Buffer, first, ovim.CursorDown)
 	case 'O': // add line above cursor
 		// XXX TODO preserve indent (depend on indent mode?)
 		em.Editor.Buffer.InsertLine(first, "", true)
 		// The cursor will already be at the inserted line, but may need to move to the start
-		em.Editor.Cursors.Move(em.Editor.Buffer, ovim.CursorBegin)
+		Move(em.Editor.Buffer, first, ovim.CursorBegin)
 	case 'a': // after cursor
-		em.Editor.Cursors.Move(em.Editor.Buffer, ovim.CursorRight)
+		Move(em.Editor.Buffer, first, ovim.CursorRight)
 	case 'A': // at end
-		em.Editor.Cursors.Move(em.Editor.Buffer, ovim.CursorEnd)
+		// Move will, once implemented correctly, not move far enough!
+		Move(em.Editor.Buffer, first, ovim.CursorEnd)
 	}
 }
 
@@ -132,18 +137,24 @@ func (em *Vi) HandleMoveHJKLCursors(ev ovim.Event) {
 		'k': ovim.CursorUp,
 		'l': ovim.CursorRight,
 	}
-	em.Editor.Cursors.Move(em.Editor.Buffer, m[r])
+	for _, c := range em.Editor.Cursors {
+		Move(em.Editor.Buffer, c, m[r])
+	}
 }
 
 // HandleAnyRune simply inserts the character in edit mode
 func (em *Vi) HandleAnyRune(ev ovim.Event) {
 	r := ev.(*ovim.CharacterEvent).Rune
 	em.Editor.Buffer.PutRuneAtCursors(em.Editor.Cursors, r)
-	em.Editor.Cursors.Move(em.Editor.Buffer, ovim.CursorRight)
+	for _, c := range em.Editor.Cursors {
+		Move(em.Editor.Buffer, c, ovim.CursorRight)
+	}
 }
 
 func (em *Vi) HandleMoveCursors(ev ovim.Event) {
-	em.Editor.MoveCursor(ev.(ovim.KeyEvent).Key)
+	for _, c := range em.Editor.Cursors {
+		Move(em.Editor.Buffer, c, ovim.CursorMap[ev.(ovim.KeyEvent).Key])
+	}
 }
 
 func (em *Vi) HandleEvent(event ovim.Event) bool {
