@@ -79,8 +79,13 @@ func (b *Buffer) RemoveRuneBeforeCursor(c *Cursor) {
 
 /* SplitLines
  *
- * Split lines ae position of cursors.
+ * Split lines at position of cursors.
  * This is tricky since it will create extra lines, which may affect cursors below
+ *
+ * XXX make this a single cursor op since this makes it very hard to update cursors
+ *
+ * If we return some generic modification detail, we may be able to automatically update
+ * cursors?
  */
 func (b *Buffer) SplitLines(cs Cursors) {
 	linesAdded := 0
@@ -91,6 +96,28 @@ func (b *Buffer) SplitLines(cs Cursors) {
 			append([]Line{after, before}, b.Lines[c.Line+linesAdded+1:]...)...)
 		linesAdded++
 	}
+}
+
+/* InsertLine
+ *
+ * insert line before/after given cursor
+ */
+func (b *Buffer) InsertLine(c *Cursor, line string, before bool) bool {
+	// On an empty buffer, just add the line
+	if b.Length() == 0 {
+		b.AddLine([]rune(line))
+		return true
+	}
+	if c.Line >= b.Length() {
+		return false
+	}
+	pos := c.Line
+	if !before {
+		pos++
+	}
+	b.Lines = append(b.Lines[:pos],
+		append([]Line{[]rune(line)}, b.Lines[pos:]...)...)
+	return true
 }
 
 /* RemoveLine
