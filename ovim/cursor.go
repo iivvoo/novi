@@ -45,7 +45,7 @@ type Cursors []*Cursor
 func (cs Cursors) After(c *Cursor) Cursors {
 	var result Cursors
 	for _, cc := range cs {
-		if cc.Line > c.Line || (cc.Line == c.Line && c.Pos > cc.Pos) {
+		if cc.Line > c.Line || (cc.Line == c.Line && cc.Pos > c.Pos) {
 			result = append(result, cc)
 		}
 	}
@@ -56,7 +56,7 @@ func (cs Cursors) After(c *Cursor) Cursors {
 func (cs Cursors) Before(c *Cursor) Cursors {
 	var result Cursors
 	for _, cc := range cs {
-		if cc.Line < c.Line || (cc.Line == c.Line && c.Pos < cc.Pos) {
+		if cc.Line < c.Line || (cc.Line == c.Line && cc.Pos < c.Pos) {
 			result = append(result, cc)
 		}
 	}
