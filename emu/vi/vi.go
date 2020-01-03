@@ -2,6 +2,7 @@ package viemu
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/iivvoo/ovim/logger"
 	"github.com/iivvoo/ovim/ovim"
@@ -10,6 +11,7 @@ import (
 /*
  * Lots of stuff to do. Start with basic non-ex (?) commands, controls:
  * insert: iIoOaA OK (single cursor)
+ * <num?>gg (top) G (end) of file
  * backspace (similar behaviour as basic when joining lines)
  * regular character insertion in edit mode
  * copy/paste (non/term/mouse: y, p etc)
@@ -35,24 +37,25 @@ const (
 	ModeCommand
 )
 
+// DispatchHandler is the signature for a handler in the dispatch table
+type DispatchHandler func(ovim.Event) bool
+
 // Dispatch maps a Key/CharacterEvent to a handler
 type Dispatch struct {
 	Mode    ViMode
 	Event   ovim.Event
 	Events  []ovim.Event
-	Handler func(ovim.Event)
+	Handler DispatchHandler
 }
 
 // Do calls the handler if the event matches
 func (d Dispatch) Do(event ovim.Event, mode ViMode) bool {
 	if event.Equals(d.Event) && (d.Mode == ModeAny || d.Mode == mode) {
-		d.Handler(event)
-		return true
+		return d.Handler(event)
 	}
 	for _, e := range d.Events {
 		if event.Equals(e) && (d.Mode == ModeAny || d.Mode == mode) {
-			d.Handler(e)
-			return true
+			return d.Handler(e)
 		}
 	}
 	return false
@@ -60,17 +63,36 @@ func (d Dispatch) Do(event ovim.Event, mode ViMode) bool {
 
 // Vi encapsulate all the Vi emulation state
 type Vi struct {
-	Editor *ovim.Editor
-	Mode   ViMode
+	Editor        *ovim.Editor
+	Mode          ViMode
+	CommandBuffer string
+	Counter       int
 
 	dispatch []Dispatch
 }
+
+/*
+ * in command mode, you don't simply press a key. It can be prefixed with a count
+ * l = right
+ * 10l = 10 right (as far as possible)
+ * x = remove char
+ * 10x = remove 10 chars
+ *
+ * 'd' by itself is nothing, it's always 'dd' which can be 10dd or d10d. 2d2d also works -> 4dd
+ * actually 2d2d is 2*(d2d), so 3d2d will delete 6, not 5
+ *
+ * Certain commands will clear any counter and just work, e.g. the insertion keys
+ * Escape in command mode clears command buffer
+ *
+ * Approach: put everything in a buffer. After each key, check of buffer is a complete command
+ */
 
 // NewVi creates/setups up a new Vi emulation instance
 func NewVi(e *ovim.Editor) *Vi {
 	em := &Vi{Editor: e, Mode: ModeCommand}
 	dispatch := []Dispatch{
 		Dispatch{Mode: ModeEdit, Event: ovim.KeyEvent{Key: ovim.KeyEscape}, Handler: em.HandleToModeCommand},
+		Dispatch{Mode: ModeCommand, Event: ovim.KeyEvent{Key: ovim.KeyEscape}, Handler: em.HandleCommandClear},
 		Dispatch{Mode: ModeCommand, Events: []ovim.Event{
 			ovim.CharacterEvent{Rune: 'i'},
 			ovim.CharacterEvent{Rune: 'I'},
@@ -88,20 +110,33 @@ func NewVi(e *ovim.Editor) *Vi {
 			ovim.KeyEvent{Key: ovim.KeyEnd},
 			ovim.KeyEvent{Key: ovim.KeyHome},
 		}, Handler: em.HandleMoveCursors},
-		Dispatch{Mode: ModeCommand, Events: []ovim.Event{
-			ovim.CharacterEvent{Rune: 'h'},
-			ovim.CharacterEvent{Rune: 'j'},
-			ovim.CharacterEvent{Rune: 'k'},
-			ovim.CharacterEvent{Rune: 'l'},
-		}, Handler: em.HandleMoveHJKLCursors},
+		Dispatch{Mode: ModeCommand, Event: ovim.CharacterEvent{}, Handler: em.HandleCommandBuffer},
 		Dispatch{Mode: ModeEdit, Event: ovim.CharacterEvent{}, Handler: em.HandleAnyRune},
 	}
 	em.dispatch = dispatch
 	return em
 }
 
+// HandleCommandBuffer handles all keys that affect the command buffer
+func (em *Vi) HandleCommandBuffer(ev ovim.Event) bool {
+	commands := "hjklxdwc0123456789"
+	r := ev.(*ovim.CharacterEvent).Rune
+
+	if strings.IndexRune(commands, r) != -1 {
+		em.CommandBuffer += string(r)
+		return true
+	}
+	return false
+}
+
+// HandleCommandClear clears the current command state (if any)
+func (em *Vi) HandleCommandClear(ev ovim.Event) bool {
+	em.CommandBuffer = ""
+	return true
+}
+
 // HandleToModeEdit handles the different switches to insert mode
-func (em *Vi) HandleToModeEdit(ev ovim.Event) {
+func (em *Vi) HandleToModeEdit(ev ovim.Event) bool {
 	em.Mode = ModeEdit
 
 	r := ev.(ovim.CharacterEvent).Rune
@@ -127,19 +162,42 @@ func (em *Vi) HandleToModeEdit(ev ovim.Event) {
 		// Move will, once implemented correctly, not move far enough!
 		Move(first, ovim.CursorEnd)
 	}
+	return true
 }
 
 // HandleToModeCommand simply switches (back) to command mode
-func (em *Vi) HandleToModeCommand(ovim.Event) {
+func (em *Vi) HandleToModeCommand(ovim.Event) bool {
 	em.Mode = ModeCommand
+	return true
 }
 
 // HandleAnyRune simply inserts the character in edit mode
-func (em *Vi) HandleAnyRune(ev ovim.Event) {
+func (em *Vi) HandleAnyRune(ev ovim.Event) bool {
 	r := ev.(*ovim.CharacterEvent).Rune
 	em.Editor.Buffer.PutRuneAtCursors(em.Editor.Cursors, r)
 	for _, c := range em.Editor.Cursors {
 		Move(c, ovim.CursorRight)
+	}
+	return true
+}
+
+// CheckExecuteCommandBuffer checks if there's a full, complete command and, if so, executes it
+func (em *Vi) CheckExecuteCommandBuffer() {
+	/*
+	 * a vi(m?) command has the structure
+	 * <number?>character
+	 * <number?>character(<number?>character)? e.g. 2d3d -> 6dd, or d10d -> 10dd
+	 *
+	 * (vim actually understands <num><keyup>!)
+	 *
+	 * "just" 0 = Begin of line
+	 */
+
+	count, command := ParseCommand(em.CommandBuffer)
+	switch command {
+	case "h", "j", "k", "l":
+		em.MoveCursorRune(rune(command[0]), count)
+		em.CommandBuffer = ""
 	}
 }
 
@@ -147,6 +205,7 @@ func (em *Vi) HandleAnyRune(ev ovim.Event) {
 func (em *Vi) HandleEvent(event ovim.Event) bool {
 	for _, d := range em.dispatch {
 		if d.Do(event, em.Mode) {
+			em.CheckExecuteCommandBuffer()
 			return true
 		}
 	}
@@ -164,6 +223,6 @@ func (em *Vi) GetStatus(width int) string {
 	if em.Editor.Buffer.Modified {
 		modified = "(modified) "
 	}
-	return mode + fmt.Sprintf("%s %srow %d col %d",
-		em.Editor.GetFilename(), modified, first.Line+1, first.Pos+1)
+	return mode + fmt.Sprintf("%s %s   %s  row %d col %d",
+		em.Editor.GetFilename(), modified, em.CommandBuffer, first.Line+1, first.Pos+1)
 }
