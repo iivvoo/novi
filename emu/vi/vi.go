@@ -111,21 +111,21 @@ func (em *Vi) HandleToModeEdit(ev ovim.Event) {
 	case 'i': // just insert at current cursor position
 		break
 	case 'I': // insert at beginning of line
-		Move(em.Editor.Buffer, first, ovim.CursorBegin)
+		Move(first, ovim.CursorBegin)
 	case 'o': // add line below current line
 		// XXX TODO preserve indent (depend on indent mode?)
 		em.Editor.Buffer.InsertLine(first, "", false)
-		Move(em.Editor.Buffer, first, ovim.CursorDown)
+		Move(first, ovim.CursorDown)
 	case 'O': // add line above cursor
 		// XXX TODO preserve indent (depend on indent mode?)
 		em.Editor.Buffer.InsertLine(first, "", true)
 		// The cursor will already be at the inserted line, but may need to move to the start
-		Move(em.Editor.Buffer, first, ovim.CursorBegin)
+		Move(first, ovim.CursorBegin)
 	case 'a': // after cursor
-		Move(em.Editor.Buffer, first, ovim.CursorRight)
+		Move(first, ovim.CursorRight)
 	case 'A': // at end
 		// Move will, once implemented correctly, not move far enough!
-		Move(em.Editor.Buffer, first, ovim.CursorEnd)
+		Move(first, ovim.CursorEnd)
 	}
 }
 
@@ -139,7 +139,7 @@ func (em *Vi) HandleAnyRune(ev ovim.Event) {
 	r := ev.(*ovim.CharacterEvent).Rune
 	em.Editor.Buffer.PutRuneAtCursors(em.Editor.Cursors, r)
 	for _, c := range em.Editor.Cursors {
-		Move(em.Editor.Buffer, c, ovim.CursorRight)
+		Move(c, ovim.CursorRight)
 	}
 }
 

@@ -25,15 +25,23 @@ func (l Line) GetRunes(start, end int) []rune {
 	return l[start:end]
 }
 
+// Buffer encapsulates the state o an editable line buffer
 type Buffer struct {
 	Lines    []Line
 	Modified bool
 }
 
+// NewBuffer creates a new Buffer
 func NewBuffer() *Buffer {
 	return &Buffer{}
 }
 
+// NewCursor creates and binds a new cursor on this buffer
+func (b *Buffer) NewCursor(line, pos int) *Cursor {
+	return NewCursor(b, line, pos)
+}
+
+// Length returns the number of lines in this buffer
 func (b *Buffer) Length() int {
 	return len(b.Lines)
 }

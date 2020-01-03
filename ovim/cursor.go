@@ -20,9 +20,17 @@ package ovim
  */
 
 // Cursor defines a position within a buffer
+// A cursor has access to the buffer it's bound to, but should only use this for checking/reading,
+// never modifying. Buffer modifications belonv on *Buffer
 type Cursor struct {
-	Line int
-	Pos  int
+	Line   int
+	Pos    int
+	Buffer *Buffer
+}
+
+// NewCursor creates a new cursor
+func NewCursor(b *Buffer, line, pos int) *Cursor {
+	return &Cursor{Line: line, Pos: pos, Buffer: b}
 }
 
 // CursorDirection defines the direction a cursor can go

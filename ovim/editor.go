@@ -35,7 +35,7 @@ type Editor struct {
 
 func NewEditor() *Editor {
 	e := &Editor{Buffer: NewBuffer()}
-	e.Cursors = append(e.Cursors, &Cursor{-1, 0})
+	e.Cursors = append(e.Cursors, e.Buffer.NewCursor(-1, 0))
 	return e
 }
 
