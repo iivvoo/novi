@@ -92,15 +92,11 @@ func (e *Editor) SaveFile() {
 	}
 }
 
-func (e *Editor) SetStatus(status string) {
-
-}
-
 // SetCursor sets the first cursor at a specific position
 func (e *Editor) SetCursor(row, col int) {
 	e.Cursors[0].Line = row
 	e.Cursors[0].Pos = col
-
+	e.Cursors[0].Validate()
 }
 
 var CursorMap = map[KeyType]CursorDirection{

@@ -33,6 +33,26 @@ func NewCursor(b *Buffer, line, pos int) *Cursor {
 	return &Cursor{Line: line, Pos: pos, Buffer: b}
 }
 
+// Validate verifies if the cursor is valid for the current buffer
+// and adjusts if necessary
+func (c *Cursor) Validate() bool {
+	valid := true
+
+	if c.Line >= c.Buffer.Length() {
+		c.Line = c.Buffer.Length() - 1
+		valid = false
+	}
+	// (-1, 0) currently is somewhat of a valid position
+	if c.Line >= 0 && c.Pos >= len(c.Buffer.Lines[c.Line]) {
+		c.Pos = len(c.Buffer.Lines[c.Line]) - 1
+		if c.Pos < 0 {
+			c.Pos = 0
+		}
+		valid = false
+	}
+	return valid
+}
+
 // CursorDirection defines the direction a cursor can go
 type CursorDirection uint8
 
