@@ -191,6 +191,7 @@ func (em *Vi) CheckExecuteCommandBuffer() {
 	 * (vim actually understands <num><keyup>!)
 	 *
 	 * "just" 0 = Begin of line
+	 * odd case, 2d0 deletes current line to beginning
 	 */
 
 	count, command := ParseCommand(em.CommandBuffer)
