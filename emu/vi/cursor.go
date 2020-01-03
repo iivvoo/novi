@@ -39,3 +39,25 @@ func Move(b *ovim.Buffer, c *ovim.Cursor, movement ovim.CursorDirection) {
 		}
 	}
 }
+
+// HandleMoveHJKLCursors hjkl can be used as cursor keys in command mode
+func (em *Vi) HandleMoveHJKLCursors(ev ovim.Event) {
+	r := ev.(ovim.CharacterEvent).Rune
+
+	m := map[rune]ovim.CursorDirection{
+		'h': ovim.CursorLeft,
+		'j': ovim.CursorDown,
+		'k': ovim.CursorUp,
+		'l': ovim.CursorRight,
+	}
+	for _, c := range em.Editor.Cursors {
+		Move(em.Editor.Buffer, c, m[r])
+	}
+}
+
+// HandleMoveCursors moves the cursors based on the given event
+func (em *Vi) HandleMoveCursors(ev ovim.Event) {
+	for _, c := range em.Editor.Cursors {
+		Move(em.Editor.Buffer, c, ovim.CursorMap[ev.(ovim.KeyEvent).Key])
+	}
+}

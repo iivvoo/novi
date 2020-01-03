@@ -39,7 +39,5 @@ func (c *Core) Loop() {
 		if !c.Emulation.HandleEvent(ev) {
 			break
 		}
-
 	}
-
 }

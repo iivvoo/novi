@@ -57,6 +57,7 @@ func (e *Editor) LoadFile(name string) {
 		e.Buffer.AddLine(Line(scanner.Text()))
 	}
 	e.filename = name
+	e.Buffer.Modified = false
 }
 
 // SaveFile saves the buffer to a file

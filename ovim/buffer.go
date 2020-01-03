@@ -11,6 +11,7 @@ package ovim
 // Line implements a sequence of Runes
 type Line []rune
 
+// GetRunes implements safe slicing with bounday checks
 func (l Line) GetRunes(start, end int) []rune {
 	if start > len(l) {
 		return nil
@@ -25,7 +26,8 @@ func (l Line) GetRunes(start, end int) []rune {
 }
 
 type Buffer struct {
-	Lines []Line
+	Lines    []Line
+	Modified bool
 }
 
 func NewBuffer() *Buffer {
@@ -54,6 +56,7 @@ func (b *Buffer) GetLines(start, end int) []Line {
 // AddLine adds a line to the bottom of the buffer
 func (b *Buffer) AddLine(line Line) {
 	b.Lines = append(b.Lines, line)
+	b.Modified = true
 }
 
 /* PutRuneAtCursor
@@ -65,6 +68,7 @@ func (b *Buffer) PutRuneAtCursors(cs Cursors, r rune) {
 		line = append(line[:c.Pos], append(Line{r}, line[c.Pos:]...)...)
 		b.Lines[c.Line] = line
 	}
+	b.Modified = true
 }
 
 func (b *Buffer) RemoveRuneBeforeCursor(c *Cursor) {
@@ -75,6 +79,7 @@ func (b *Buffer) RemoveRuneBeforeCursor(c *Cursor) {
 		line = append(line[:c.Pos-1], line[c.Pos:]...)
 		b.Lines[c.Line] = line
 	}
+	b.Modified = true
 }
 
 /* SplitLines
@@ -96,6 +101,7 @@ func (b *Buffer) SplitLines(cs Cursors) {
 			append([]Line{after, before}, b.Lines[c.Line+linesAdded+1:]...)...)
 		linesAdded++
 	}
+	b.Modified = true
 }
 
 /* InsertLine
@@ -106,6 +112,7 @@ func (b *Buffer) InsertLine(c *Cursor, line string, before bool) bool {
 	// On an empty buffer, just add the line
 	if b.Length() == 0 {
 		b.AddLine([]rune(line))
+		b.Modified = true
 		return true
 	}
 	if c.Line >= b.Length() {
@@ -117,6 +124,7 @@ func (b *Buffer) InsertLine(c *Cursor, line string, before bool) bool {
 	}
 	b.Lines = append(b.Lines[:pos],
 		append([]Line{[]rune(line)}, b.Lines[pos:]...)...)
+	b.Modified = true
 	return true
 }
 
@@ -130,6 +138,7 @@ func (b *Buffer) RemoveLine(line int) bool {
 		return false
 	}
 	b.Lines = append(b.Lines[:line], b.Lines[line+1:]...)
+	b.Modified = true
 	return true
 }
 
@@ -144,5 +153,6 @@ func (b *Buffer) JoinLineWithPrevious(line int) bool {
 
 	b.Lines[line-1] = append(b.Lines[line-1], b.Lines[line]...)
 	b.RemoveLine(line)
+	b.Modified = true
 	return true
 }

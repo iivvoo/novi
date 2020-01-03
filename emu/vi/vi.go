@@ -134,34 +134,12 @@ func (em *Vi) HandleToModeCommand(ovim.Event) {
 	em.Mode = ModeCommand
 }
 
-// HandleMoveHJKLCursors hjkl can be used as cursor keys in command mode
-func (em *Vi) HandleMoveHJKLCursors(ev ovim.Event) {
-	r := ev.(ovim.CharacterEvent).Rune
-
-	m := map[rune]ovim.CursorDirection{
-		'h': ovim.CursorLeft,
-		'j': ovim.CursorDown,
-		'k': ovim.CursorUp,
-		'l': ovim.CursorRight,
-	}
-	for _, c := range em.Editor.Cursors {
-		Move(em.Editor.Buffer, c, m[r])
-	}
-}
-
 // HandleAnyRune simply inserts the character in edit mode
 func (em *Vi) HandleAnyRune(ev ovim.Event) {
 	r := ev.(*ovim.CharacterEvent).Rune
 	em.Editor.Buffer.PutRuneAtCursors(em.Editor.Cursors, r)
 	for _, c := range em.Editor.Cursors {
 		Move(em.Editor.Buffer, c, ovim.CursorRight)
-	}
-}
-
-// HandleMoveCursors moves the cursors based on the given event
-func (em *Vi) HandleMoveCursors(ev ovim.Event) {
-	for _, c := range em.Editor.Cursors {
-		Move(em.Editor.Buffer, c, ovim.CursorMap[ev.(ovim.KeyEvent).Key])
 	}
 }
 
@@ -178,10 +156,14 @@ func (em *Vi) HandleEvent(event ovim.Event) bool {
 // GetStatus provides a way for the Editor to get the emulation's status
 func (em *Vi) GetStatus(width int) string {
 	mode := ""
+	modified := ""
 	first := em.Editor.Cursors[0]
 	if em.Mode == ModeEdit {
 		mode = "--INSERT-- "
 	}
-	return mode + fmt.Sprintf("%s (changed?) row %d col %d",
-		em.Editor.GetFilename(), first.Line+1, first.Pos+1)
+	if em.Editor.Buffer.Modified {
+		modified = "(modified) "
+	}
+	return mode + fmt.Sprintf("%s %srow %d col %d",
+		em.Editor.GetFilename(), modified, first.Line+1, first.Pos+1)
 }
