@@ -122,9 +122,15 @@ func (em *Basic) HandleEvent(event ovim.Event) bool {
 	return true
 }
 
+// GetStatus returns the status for the emulation, to be printed in a status bar
 func (em *Basic) GetStatus(width int) string {
 	first := em.Editor.Cursors[0]
+	changed := ""
+
+	if em.Editor.Buffer.Modified {
+		changed = "(changed) "
+	}
 	// Make use of width to align cursor row/col right. Truncate if necessary
-	return fmt.Sprintf("%s (changed?) row %d col %d (INS)",
-		em.Editor.GetFilename(), first.Line+1, first.Pos+1)
+	return fmt.Sprintf("%s %srow %d col %d (INS)",
+		em.Editor.GetFilename(), changed, first.Line+1, first.Pos+1)
 }
