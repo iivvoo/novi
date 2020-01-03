@@ -54,3 +54,48 @@ func TestCursorFiltering(t *testing.T) {
 		}
 	})
 }
+
+func TestCursorValidate(t *testing.T) {
+	t.Run("Just valid", func(t *testing.T) {
+		c := BuildBuffer("line 1", "line 2").NewCursor(1, 3)
+		if !c.Validate() {
+			t.Errorf("Cursor did not validate but I did expect it to.")
+		}
+	})
+	t.Run("Pos too far", func(t *testing.T) {
+		c := BuildBuffer("line 1", "line 2").NewCursor(1, 30)
+		if c.Validate() {
+			t.Errorf("Cursor did validate but I did expect it not to.")
+		}
+		if c.Line != 1 || c.Pos != 5 {
+			t.Errorf("Expected cursor to be placed at (1, 5) but got (%d, %d)", c.Line, c.Pos)
+		}
+	})
+	t.Run("Line too far", func(t *testing.T) {
+		c := BuildBuffer("line 1", "line 2").NewCursor(10, 3)
+		if c.Validate() {
+			t.Errorf("Cursor did validate but I did expect it not to.")
+		}
+		if c.Line != 1 || c.Pos != 3 {
+			t.Errorf("Expected cursor to be placed at (1, 3) but got (%d, %d)", c.Line, c.Pos)
+		}
+	})
+	t.Run("All too far", func(t *testing.T) {
+		c := BuildBuffer("line 1", "line 2").NewCursor(10, 30)
+		if c.Validate() {
+			t.Errorf("Cursor did validate but I did expect it not to.")
+		}
+		if c.Line != 1 || c.Pos != 5 {
+			t.Errorf("Expected cursor to be placed at (1, 5) but got (%d, %d)", c.Line, c.Pos)
+		}
+	})
+	t.Run("Empty Buffer", func(t *testing.T) {
+		c := BuildBuffer().NewCursor(10, 30)
+		if c.Validate() {
+			t.Errorf("Cursor did validate but I did expect it not to.")
+		}
+		if c.Line != -1 || c.Pos != 0 {
+			t.Errorf("Expected cursor to be placed at (-1, 0) but got (%d, %d)", c.Line, c.Pos)
+		}
+	})
+}
