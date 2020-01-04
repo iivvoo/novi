@@ -110,6 +110,7 @@ func NewVi(e *ovim.Editor) *Vi {
 			ovim.KeyEvent{Key: ovim.KeyEnd},
 			ovim.KeyEvent{Key: ovim.KeyHome},
 		}, Handler: em.HandleMoveCursors},
+		// Sort of a generic fallthrough handler - handles commands in command mode
 		Dispatch{Mode: ModeCommand, Event: ovim.CharacterEvent{}, Handler: em.HandleCommandBuffer},
 		Dispatch{Mode: ModeEdit, Event: ovim.CharacterEvent{}, Handler: em.HandleAnyRune},
 	}
@@ -119,7 +120,7 @@ func NewVi(e *ovim.Editor) *Vi {
 
 // HandleCommandBuffer handles all keys that affect the command buffer
 func (em *Vi) HandleCommandBuffer(ev ovim.Event) bool {
-	commands := "hjklxdwc0123456789"
+	commands := "hjklxXdwc0123456789"
 	r := ev.(*ovim.CharacterEvent).Rune
 
 	if strings.IndexRune(commands, r) != -1 {
@@ -133,6 +134,16 @@ func (em *Vi) HandleCommandBuffer(ev ovim.Event) bool {
 func (em *Vi) HandleCommandClear(ev ovim.Event) bool {
 	em.CommandBuffer = ""
 	return true
+}
+
+// RemoveCharacters removes a number of characters before or after the cursors
+func (em *Vi) RemoveCharacters(howmany int, before bool) {
+	for _, c := range em.Editor.Cursors {
+		em.Editor.Buffer.RemoveCharacters(c, before, howmany)
+		if before {
+			MoveMany(c, ovim.CursorLeft, howmany)
+		}
+	}
 }
 
 // HandleToModeEdit handles the different switches to insert mode
@@ -192,12 +203,17 @@ func (em *Vi) CheckExecuteCommandBuffer() {
 	 *
 	 * "just" 0 = Begin of line
 	 * odd case, 2d0 deletes current line to beginning
+	 *
+	 * There are also combinations, e.g c3w -> what about 2c3w?
 	 */
 
 	count, command := ParseCommand(em.CommandBuffer)
 	switch command {
 	case "h", "j", "k", "l":
 		em.MoveCursorRune(rune(command[0]), count)
+		em.CommandBuffer = ""
+	case "x", "X":
+		em.RemoveCharacters(count, command == "X")
 		em.CommandBuffer = ""
 	}
 }

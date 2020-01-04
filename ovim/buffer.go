@@ -164,3 +164,38 @@ func (b *Buffer) JoinLineWithPrevious(line int) bool {
 	b.Modified = true
 	return true
 }
+
+/* RemoveCharacters
+ *
+ * Removes a number of characters before or after the cursor
+ * if after, it also removes the character the cursor is on.
+ * if before, it preserves the character on the cursor. If this
+ * is too vi-specific, refactor
+ *
+ * Could return number of characters actually removed?
+ */
+func (b *Buffer) RemoveCharacters(c *Cursor, before bool, howmany int) {
+	line := b.Lines[c.Line]
+
+	if before {
+		if howmany > c.Pos {
+			// befoe c.Pos, If c.Pos == 1, there's 1 char before it
+			howmany = c.Pos
+		}
+		if howmany > 0 {
+			line = append(line[:c.Pos-howmany], line[c.Pos:]...)
+			b.Lines[c.Line] = line
+		}
+	} else {
+		if howmany > len(line)-c.Pos {
+			// 12345
+			//   ^- cusor pos 2
+			// max howmany: 3 -> len(line) - pos
+			howmany = len(line) - c.Pos
+		}
+		if howmany > 0 {
+			line = append(line[:c.Pos], line[c.Pos+howmany:]...)
+			b.Lines[c.Line] = line
+		}
+	}
+}

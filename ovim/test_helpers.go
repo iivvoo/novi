@@ -17,7 +17,7 @@ func AssertCursor(t *testing.T, c *Cursor, line, pos int) {
 }
 
 // AssertBufferMatch asserts the buffer matches the expected string slice
-func AssertBufferMatch(t *testing.T, b *Buffer, expected []string) {
+func AssertBufferMatch(t *testing.T, b *Buffer, expected ...string) {
 	t.Helper()
 
 	if a, b := b.Length(), len(expected); a != b {

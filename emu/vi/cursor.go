@@ -40,6 +40,13 @@ func Move(c *ovim.Cursor, movement ovim.CursorDirection) {
 	}
 }
 
+// MoveMany moves the cursor more than one position, if possible
+func MoveMany(c *ovim.Cursor, movement ovim.CursorDirection, count int) {
+	for i := 0; i < count; i++ {
+		Move(c, movement)
+	}
+}
+
 // MoveCursorRune moves cursor based on hjkl
 func (em *Vi) MoveCursorRune(r rune, count int) bool {
 	m := map[rune]ovim.CursorDirection{
