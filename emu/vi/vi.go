@@ -109,12 +109,50 @@ func NewVi(e *ovim.Editor) *Vi {
 			ovim.KeyEvent{Key: ovim.KeyEnd},
 			ovim.KeyEvent{Key: ovim.KeyHome},
 		}, Handler: em.HandleMoveCursors},
+		Dispatch{Mode: ModeAny, Events: []ovim.Event{
+			ovim.KeyEvent{Key: ovim.KeyBackspace},
+			ovim.KeyEvent{Key: ovim.KeyDelete},
+		}, Handler: em.HandleBackspace},
 		// Sort of a generic fallthrough handler - handles commands in command mode
 		Dispatch{Mode: ModeCommand, Event: ovim.CharacterEvent{}, Handler: em.HandleCommandBuffer},
 		Dispatch{Mode: ModeEdit, Event: ovim.CharacterEvent{}, Handler: em.HandleAnyRune},
 	}
 	em.dispatch = dispatch
 	return em
+}
+
+// HandleBackspace handles backspace behaviour in both edit and command mode
+func (em *Vi) HandleBackspace(ev ovim.Event) bool {
+	if em.Mode == ModeCommand {
+		for _, c := range em.Editor.Cursors {
+			if c.Pos == 0 && c.Line != 0 {
+				Move(c, ovim.CursorUp)
+				Move(c, ovim.CursorEnd)
+			} else {
+				Move(c, ovim.CursorLeft)
+			}
+		}
+	} else {
+		for _, c := range em.Editor.Cursors {
+			if c.Pos > 0 {
+				em.Editor.Buffer.RemoveRuneBeforeCursor(c)
+				Move(c, ovim.CursorLeft)
+			} else {
+				// identical to basic emulation XXX
+				l := c.Line
+				Move(c, ovim.CursorUp)
+				Move(c, ovim.CursorEnd)
+				// except here, since "End" in vi moves to the last character, not past it, for which we need to compensate
+				Move(c, ovim.CursorRight)
+				em.Editor.Buffer.JoinLineWithPrevious(l)
+
+				for _, cc := range em.Editor.Cursors.After(c) {
+					Move(cc, ovim.CursorUp)
+				}
+			}
+		}
+	}
+	return true
 }
 
 // HandleCommandBuffer handles all keys that affect the command buffer
