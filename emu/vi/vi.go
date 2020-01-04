@@ -245,7 +245,7 @@ func (em *Vi) HandleAnyRune(ev ovim.Event) bool {
 
 // HandleCommandBuffer handles all keys that affect the command buffer
 func (em *Vi) HandleCommandBuffer(ev ovim.Event) bool {
-	commands := "gGhjklxXdwc0123456789$^"
+	commands := "gGhjklxXdwcZ0123456789$^"
 	r := ev.(*ovim.CharacterEvent).Rune
 
 	if strings.IndexRune(commands, r) != -1 {
@@ -253,6 +253,11 @@ func (em *Vi) HandleCommandBuffer(ev ovim.Event) bool {
 		return true
 	}
 	return false
+}
+
+// SaveFile tells the editor to save the file
+func (em *Vi) SaveFile() {
+	em.Editor.SaveFile()
 }
 
 // CheckExecuteCommandBuffer checks if there's a full, complete command and, if so, executes it
@@ -283,6 +288,9 @@ func (em *Vi) CheckExecuteCommandBuffer() {
 		em.CommandBuffer = ""
 	case "^", "$":
 		em.JumpStartEndLine(count, command == "^")
+		em.CommandBuffer = ""
+	case "ZZ":
+		em.SaveFile()
 		em.CommandBuffer = ""
 	}
 }
