@@ -13,10 +13,9 @@ import (
  * insert: iIoOaA OK (single cursor)
  * <num?>gg (top) G (end) of file
  * backspace (similar behaviour as basic when joining lines)
- * regular character insertion in edit mode
  * copy/paste (non/term/mouse: y, p etc)
  * commands: d10d, c5w, 10x, etc.
- *   escape in command mode -> cancel current
+ * proper tab support
  *
  * Could/should we support multiple cursors for vi emulation?
  * vim itself provides ctrl-v which is a bit like a multi-cursor, but not all command work on it
@@ -100,7 +99,7 @@ func NewVi(e *ovim.Editor) *Vi {
 			ovim.CharacterEvent{Rune: 'O'},
 			ovim.CharacterEvent{Rune: 'a'},
 			ovim.CharacterEvent{Rune: 'A'},
-		}, Handler: em.HandleToModeEdit},
+		}, Handler: em.HandleInsertionKeys},
 
 		Dispatch{Mode: ModeAny, Events: []ovim.Event{
 			ovim.KeyEvent{Key: ovim.KeyLeft},
@@ -146,8 +145,8 @@ func (em *Vi) RemoveCharacters(howmany int, before bool) {
 	}
 }
 
-// HandleToModeEdit handles the different switches to insert mode
-func (em *Vi) HandleToModeEdit(ev ovim.Event) bool {
+// HandleInsertionKeys handles the different switches to insert mode
+func (em *Vi) HandleInsertionKeys(ev ovim.Event) bool {
 	em.Mode = ModeEdit
 
 	r := ev.(ovim.CharacterEvent).Rune
