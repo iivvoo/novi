@@ -12,7 +12,7 @@ import (
  * Lots of stuff to do. Start with basic non-ex (?) commands, controls:
  * insert: iIoOaA OK (single cursor)
  * <num?>gg (top) G (end) of file
- * backspace (similar behaviour as basic when joining lines)
+ * w (jump word), with counter. Keep support for "c<n>w" in mind!
  * copy/paste (non/term/mouse: y, p etc)
  * commands: d10d, c5w, 10x, etc.
  * proper tab support
@@ -123,6 +123,8 @@ func NewVi(e *ovim.Editor) *Vi {
 
 // HandleBackspace handles backspace behaviour in both edit and command mode
 func (em *Vi) HandleBackspace(ev ovim.Event) bool {
+	// BUG: vim seems to allow counts on backspace in commandmode,
+	// e.g. 10<backspace>, so it should be handled there
 	if em.Mode == ModeCommand {
 		for _, c := range em.Editor.Cursors {
 			if c.Pos == 0 && c.Line != 0 {
@@ -155,18 +157,6 @@ func (em *Vi) HandleBackspace(ev ovim.Event) bool {
 	return true
 }
 
-// HandleCommandBuffer handles all keys that affect the command buffer
-func (em *Vi) HandleCommandBuffer(ev ovim.Event) bool {
-	commands := "hjklxXdwc0123456789"
-	r := ev.(*ovim.CharacterEvent).Rune
-
-	if strings.IndexRune(commands, r) != -1 {
-		em.CommandBuffer += string(r)
-		return true
-	}
-	return false
-}
-
 // HandleCommandClear clears the current command state (if any)
 func (em *Vi) HandleCommandClear(ev ovim.Event) bool {
 	em.CommandBuffer = ""
@@ -181,6 +171,30 @@ func (em *Vi) RemoveCharacters(howmany int, before bool) {
 			MoveMany(c, ovim.CursorLeft, howmany)
 		}
 	}
+}
+
+// JumpStartEndLine handles jumping to the start/end of line
+func (em *Vi) JumpStartEndLine(howmany int, jumpstart bool) {
+	for _, c := range em.Editor.Cursors {
+		if jumpstart {
+			// howmany has no meaning
+			c.Pos = 0
+		} else {
+			MoveMany(c, ovim.CursorDown, howmany-1)
+			Move(c, ovim.CursorEnd)
+		}
+	}
+}
+
+// HandleEvent is the main entry point
+func (em *Vi) HandleEvent(event ovim.Event) bool {
+	for _, d := range em.dispatch {
+		if d.Do(event, em.Mode) {
+			em.CheckExecuteCommandBuffer()
+			return true
+		}
+	}
+	return false
 }
 
 // HandleInsertionKeys handles the different switches to insert mode
@@ -229,6 +243,18 @@ func (em *Vi) HandleAnyRune(ev ovim.Event) bool {
 	return true
 }
 
+// HandleCommandBuffer handles all keys that affect the command buffer
+func (em *Vi) HandleCommandBuffer(ev ovim.Event) bool {
+	commands := "gGhjklxXdwc0123456789$^"
+	r := ev.(*ovim.CharacterEvent).Rune
+
+	if strings.IndexRune(commands, r) != -1 {
+		em.CommandBuffer += string(r)
+		return true
+	}
+	return false
+}
+
 // CheckExecuteCommandBuffer checks if there's a full, complete command and, if so, executes it
 func (em *Vi) CheckExecuteCommandBuffer() {
 	/*
@@ -236,7 +262,7 @@ func (em *Vi) CheckExecuteCommandBuffer() {
 	 * <number?>character
 	 * <number?>character(<number?>character)? e.g. 2d3d -> 6dd, or d10d -> 10dd
 	 *
-	 * (vim actually understands <num><keyup>!)
+	 * (vim actually understands <num><keyup>!, same for backspace)
 	 *
 	 * "just" 0 = Begin of line
 	 * odd case, 2d0 deletes current line to beginning
@@ -252,18 +278,32 @@ func (em *Vi) CheckExecuteCommandBuffer() {
 	case "x", "X":
 		em.RemoveCharacters(count, command == "X")
 		em.CommandBuffer = ""
+	case "gg", "G":
+		em.JumpTopBottom(count, command == "gg")
+		em.CommandBuffer = ""
+	case "^", "$":
+		em.JumpStartEndLine(count, command == "^")
+		em.CommandBuffer = ""
 	}
 }
 
-// HandleEvent is the main entry point
-func (em *Vi) HandleEvent(event ovim.Event) bool {
-	for _, d := range em.dispatch {
-		if d.Do(event, em.Mode) {
-			em.CheckExecuteCommandBuffer()
-			return true
+// JumpTopBottom handles jumping using the gg / G command
+func (em *Vi) JumpTopBottom(howmany int, jumptop bool) {
+	// if howany is > 1, it's always a jump from the top
+	for _, c := range em.Editor.Cursors {
+		if howmany > 1 {
+			c.Line = 0
+			c.Pos = 0
+			MoveMany(c, ovim.CursorDown, howmany-1)
+		} else if jumptop {
+			// this will move all cursors to (0,0) -- remove them?
+			c.Line = 0
+			c.Pos = 0
+		} else {
+			c.Line = em.Editor.Buffer.Length() - 1
+			c.Pos = 0
 		}
 	}
-	return false
 }
 
 // GetStatus provides a way for the Editor to get the emulation's status
