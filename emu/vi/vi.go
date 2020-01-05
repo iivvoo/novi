@@ -11,8 +11,11 @@ import (
 /*
  * Lots of stuff to do. Start with basic non-ex (?) commands, controls:
  * insert: iIoOaA OK (single cursor)
- * <num?>gg (top) G (end) of file
+ * <num?>gg (top) G (end) of file OK
  * w (jump word), with counter. Keep support for "c<n>w" in mind!
+ *  w = non-space? W=true word?
+ *  c<N>w and d<N>w are simiar (c is d with insert)
+ * ZQ to exit without save
  * copy/paste (non/term/mouse: y, p etc)
  * commands: d10d, c5w, 10x, etc.
  * proper tab support
@@ -190,8 +193,8 @@ func (em *Vi) JumpStartEndLine(howmany int, jumpstart bool) {
 func (em *Vi) HandleEvent(event ovim.Event) bool {
 	for _, d := range em.dispatch {
 		if d.Do(event, em.Mode) {
-			em.CheckExecuteCommandBuffer()
-			return true
+			// returns false if we need to exit
+			return em.CheckExecuteCommandBuffer()
 		}
 	}
 	return false
@@ -245,7 +248,7 @@ func (em *Vi) HandleAnyRune(ev ovim.Event) bool {
 
 // HandleCommandBuffer handles all keys that affect the command buffer
 func (em *Vi) HandleCommandBuffer(ev ovim.Event) bool {
-	commands := "gGhjklxXdwcZ0123456789$^"
+	commands := "gGhjklxXdwcZQ0123456789$^"
 	r := ev.(*ovim.CharacterEvent).Rune
 
 	if strings.IndexRune(commands, r) != -1 {
@@ -261,7 +264,7 @@ func (em *Vi) SaveFile() {
 }
 
 // CheckExecuteCommandBuffer checks if there's a full, complete command and, if so, executes it
-func (em *Vi) CheckExecuteCommandBuffer() {
+func (em *Vi) CheckExecuteCommandBuffer() bool {
 	/*
 	 * a vi(m?) command has the structure
 	 * <number?>character
@@ -292,7 +295,11 @@ func (em *Vi) CheckExecuteCommandBuffer() {
 	case "ZZ":
 		em.SaveFile()
 		em.CommandBuffer = ""
+	case "ZQ":
+		em.CommandBuffer = ""
+		return false // signals exit
 	}
+	return true
 }
 
 // JumpTopBottom handles jumping using the gg / G command
