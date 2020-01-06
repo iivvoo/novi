@@ -1,7 +1,7 @@
 package viemu
 
 import (
-	"strings"
+	"unicode"
 
 	"github.com/iivvoo/ovim/ovim"
 )
@@ -26,7 +26,7 @@ type RuneType int
 
 // The possible values a RuneType can have
 const (
-	TypeWord RuneType = iota
+	TypeAlNum RuneType = iota
 	TypeSep
 	TypeSpace
 	TypeUnknown
@@ -34,14 +34,13 @@ const (
 
 // GetRuneType returns if the rune is alphanum, whitespace or separator
 func GetRuneType(r rune) RuneType {
-	// golang probable has better (unicode) tools for this
-	if strings.IndexRune(".,;:'/", r) != -1 {
-		return TypeSep
+	if unicode.IsLetter(r) || unicode.IsNumber(r) {
+		return TypeAlNum
 	}
-	if strings.IndexRune(" \n\t", r) != -1 {
+	if unicode.IsSpace(r) {
 		return TypeSpace
 	}
-	return TypeWord
+	return TypeSep
 }
 
 // JumpForward jumps to the next sequence of alphanum or separators, skipping whitespace
