@@ -35,7 +35,7 @@ const (
 // GetRuneType returns if the rune is alphanum, whitespace or separator
 func GetRuneType(r rune) RuneType {
 	// golang probable has better (unicode) tools for this
-	if strings.IndexRune(".,;'/", r) != -1 {
+	if strings.IndexRune(".,;:'/", r) != -1 {
 		return TypeSep
 	}
 	if strings.IndexRune(" \n\t", r) != -1 {

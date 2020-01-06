@@ -57,7 +57,7 @@ func TestJumpWordForward(t *testing.T) {
 
 func TestJump(t *testing.T) {
 	b := ovim.BuildBuffer("This..isa line/;-with? separators", "", "  leading space",
-		"https://github.com/some/repo.git", "last line")
+		"https://github.com/some/repo.git?foo=a", "last line")
 
 	t.Run("Find first from start", func(t *testing.T) {
 		c := b.NewCursor(0, 0)
@@ -94,5 +94,17 @@ func TestJump(t *testing.T) {
 		l, p := JumpForward(b, c)
 
 		AssertLinePos(t, 2, 2, l, p) // expect space to be skipped
+	})
+	t.Run("Jump URL", func(t *testing.T) {
+		c := b.NewCursor(3, 0)
+		l, p := JumpForward(b, c)
+
+		AssertLinePos(t, 3, 5, l, p) // expect space to be skipped
+	})
+	t.Run("Jump URL 2", func(t *testing.T) {
+		c := b.NewCursor(3, 5) // where we ended the previous test
+		l, p := JumpForward(b, c)
+
+		AssertLinePos(t, 3, 8, l, p)
 	})
 }

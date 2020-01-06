@@ -248,7 +248,7 @@ func (em *Vi) HandleAnyRune(ev ovim.Event) bool {
 
 // HandleCommandBuffer handles all keys that affect the command buffer
 func (em *Vi) HandleCommandBuffer(ev ovim.Event) bool {
-	commands := "gGhjklxXdwcZQ0123456789$^"
+	commands := "gGhjklxXdwWcZQ0123456789$^"
 	r := ev.(*ovim.CharacterEvent).Rune
 
 	if strings.IndexRune(commands, r) != -1 {
@@ -283,6 +283,9 @@ func (em *Vi) CheckExecuteCommandBuffer() bool {
 	case "h", "j", "k", "l":
 		em.MoveCursorRune(rune(command[0]), count)
 		em.CommandBuffer = ""
+	case "w", "W": // "b", "B"
+		em.JumpWord(rune(command[0]), count)
+		em.CommandBuffer = ""
 	case "x", "X":
 		em.RemoveCharacters(count, command == "X")
 		em.CommandBuffer = ""
@@ -300,6 +303,22 @@ func (em *Vi) CheckExecuteCommandBuffer() bool {
 		return false // signals exit
 	}
 	return true
+}
+
+// JumpWord jumps to the next word / sequence of separators
+func (em *Vi) JumpWord(r rune, howmany int) {
+	for i := 0; i < howmany; i++ {
+		for _, c := range em.Editor.Cursors {
+			if r == 'W' {
+				l, p := JumpWordForward(em.Editor.Buffer, c)
+				c.Line, c.Pos = l, p
+			} else { // 'w'
+				l, p := JumpForward(em.Editor.Buffer, c)
+				c.Line, c.Pos = l, p
+			}
+		}
+	}
+
 }
 
 // JumpTopBottom handles jumping using the gg / G command
