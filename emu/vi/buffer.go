@@ -27,6 +27,7 @@ const (
 	TypeWord RuneType = iota
 	TypeSep
 	TypeSpace
+	TypeUnknown
 )
 
 func GetRuneType(r rune) RuneType {
@@ -44,24 +45,27 @@ func JumpForward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
 	// basically make a distinction between separator-words, number/letter words, whitespace
 	line, pos := c.Line, c.Pos
 
-	// assume it is a valid curso
-	runeType := GetRuneType(b.Lines[c.Line][c.Pos])
+	runeType := TypeUnknown
 
 	for line < b.Length() {
 		l := b.Lines[line]
 		for pos < len(l) {
 			cc := l[pos]
 
-			if newType := GetRuneType(cc); newType != TypeSpace && newType != runeType {
+			newType := GetRuneType(cc)
+			if runeType != TypeUnknown && newType != TypeSpace && newType != runeType {
 				return line, pos
-			} else {
-				runeType = newType
 			}
+			runeType = newType
 
 			pos++
 		}
 		pos = 0
 		line++
+		// an empty line also matches
+		if line < b.Length() && len(b.Lines[line]) == 0 {
+			return line, pos
+		}
 	}
 	return -1, -1
 }

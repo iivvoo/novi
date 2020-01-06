@@ -56,7 +56,7 @@ func TestJumpWordForward(t *testing.T) {
 }
 
 func TestJump(t *testing.T) {
-	b := ovim.BuildBuffer("This..isa line/;-with? spearators", "", "  leading space",
+	b := ovim.BuildBuffer("This..isa line/;-with? separators", "", "  leading space",
 		"https://github.com/some/repo.git", "last line")
 
 	t.Run("Find first from start", func(t *testing.T) {
@@ -71,10 +71,28 @@ func TestJump(t *testing.T) {
 
 		AssertLinePos(t, 0, 6, l, p)
 	})
-	t.Run("Find first from interpunction", func(t *testing.T) {
+	t.Run("Find interpunction", func(t *testing.T) {
+		c := b.NewCursor(0, 10) // 'l' in line
+		l, p := JumpForward(b, c)
+
+		AssertLinePos(t, 0, 14, l, p)
+	})
+	t.Run("Find first from interpunction, skipping whitespace", func(t *testing.T) {
 		c := b.NewCursor(0, 21) // the ? after with
 		l, p := JumpForward(b, c)
 
 		AssertLinePos(t, 0, 23, l, p) // expect space to be skipped
+	})
+	t.Run("Find empty line", func(t *testing.T) {
+		c := b.NewCursor(0, 23) // the 's' in separators
+		l, p := JumpForward(b, c)
+
+		AssertLinePos(t, 1, 0, l, p) // expect space to be skipped
+	})
+	t.Run("Find from empty line", func(t *testing.T) {
+		c := b.NewCursor(1, 0) // the 's' in separators
+		l, p := JumpForward(b, c)
+
+		AssertLinePos(t, 2, 2, l, p) // expect space to be skipped
 	})
 }
