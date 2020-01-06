@@ -21,8 +21,10 @@ import (
  *  | |  |    | |    |  | |   ||
  */
 
+// RuneType identifies the type of a rune
 type RuneType int
 
+// The possible values a RuneType can have
 const (
 	TypeWord RuneType = iota
 	TypeSep
@@ -30,6 +32,7 @@ const (
 	TypeUnknown
 )
 
+// GetRuneType returns if the rune is alphanum, whitespace or separator
 func GetRuneType(r rune) RuneType {
 	// golang probable has better (unicode) tools for this
 	if strings.IndexRune(".,;'/", r) != -1 {
@@ -41,6 +44,7 @@ func GetRuneType(r rune) RuneType {
 	return TypeWord
 }
 
+// JumpForward jumps to the next sequence of alphanum or separators, skipping whitespace
 func JumpForward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
 	// basically make a distinction between separator-words, number/letter words, whitespace
 	line, pos := c.Line, c.Pos
@@ -70,8 +74,7 @@ func JumpForward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
 	return -1, -1
 }
 
-// JumpWordForward implements "W" behaviour, the begining of the next
-// word
+// JumpWordForward implements "W" behaviour, the begining of the next word
 func JumpWordForward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
 	// cursor does not have to be bound to buffer
 
