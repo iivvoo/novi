@@ -27,10 +27,10 @@ func TestJumpWordForward(t *testing.T) {
 		c := b.NewCursor(0, 19) // on 'i' in line
 		l, p := JumpWordForward(b, c)
 
-		AssertLinePos(t, 1, -1, l, p)
+		AssertLinePos(t, 1, 0, l, p)
 	})
 	t.Run("Start from empty line", func(t *testing.T) {
-		c := b.NewCursor(1, -1)
+		c := b.NewCursor(1, 0)
 		l, p := JumpWordForward(b, c)
 
 		AssertLinePos(t, 2, 2, l, p)
@@ -55,6 +55,7 @@ func TestJumpWordForward(t *testing.T) {
 	})
 }
 
+// Test 'B' behaviour
 func TestJumpWordBackward(t *testing.T) {
 	b := ovim.BuildBuffer("This is the first line.", "", "  leading space",
 		"trailing space   ", "last line")
@@ -97,10 +98,17 @@ func TestJumpWordBackward(t *testing.T) {
 		AssertLinePos(t, 0, 6, l, p)
 	})
 	t.Run("Jump from empty", func(t *testing.T) {
-		c := b.NewCursor(1, -1)
+		c := b.NewCursor(1, 0)
 		l, p := JumpWordBackward(b, c)
 
 		AssertLinePos(t, 0, 18, l, p)
+	})
+	t.Run("Jump previous line word continues", func(t *testing.T) {
+		b := ovim.BuildBuffer("foo bar", "bla 123")
+		c := b.NewCursor(1, 0) // where we ended the previous test
+		l, p := JumpWordBackward(b, c)
+
+		AssertLinePos(t, 0, 4, l, p)
 	})
 }
 
