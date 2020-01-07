@@ -104,7 +104,7 @@ func TestJumpWordBackward(t *testing.T) {
 		AssertLinePos(t, 0, 18, l, p)
 	})
 	t.Run("Jump previous line word continues", func(t *testing.T) {
-		b := ovim.BuildBuffer("foo bar", "bla 123")
+		b := ovim.BuildBuffer("foo bar", "4. bla 123")
 		c := b.NewCursor(1, 0) // where we ended the previous test
 		l, p := JumpWordBackward(b, c)
 

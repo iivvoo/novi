@@ -117,7 +117,7 @@ func JumpWordBackward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
 		// mostly relevant on empty lines
 		for pos >= 0 && pos < len(l) {
 			cc := l[pos]
-			if didMove && unicode.IsLetter(cc) || unicode.IsNumber(cc) {
+			if didMove && (unicode.IsLetter(cc) || unicode.IsNumber(cc)) {
 				wordFound = true
 			} else if wordFound {
 				// we found a word, now a non-alphanum, so our desired position is the
