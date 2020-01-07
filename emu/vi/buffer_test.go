@@ -197,6 +197,12 @@ func TestJumpBackward(t *testing.T) {
 
 		AssertLinePos(t, 0, 10, l, p)
 	})
+	t.Run("Match on previous line", func(t *testing.T) {
+		c := b.NewCursor(4, 0)
+		l, p := JumpBackward(b, c)
+
+		AssertLinePos(t, 3, 37, l, p)
+	})
 }
 
 func AssertWordMatches(t *testing.T, m []int, exp []int) {

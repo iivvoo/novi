@@ -39,32 +39,43 @@ func GetRuneType(r rune) RuneType {
 	return TypeSep
 }
 
+// WordStarts Finds al the "word starts" in a given line
+func WordStarts(l ovim.Line) []int {
+	if len(l) == 0 {
+		return []int{0}
+	}
+
+	var res []int
+
+	prevRune := TypeUnknown
+	for pos, c := range l {
+		newRune := GetRuneType(c)
+
+		if prevRune != newRune && newRune != TypeSpace {
+			res = append(res, pos)
+		}
+		prevRune = newRune
+	}
+
+	return res
+}
+
 // JumpForward jumps to the next sequence of alphanum or separators, skipping whitespace
 func JumpForward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
 	line, pos := c.Line, c.Pos
 
-	runeType := TypeUnknown
 	for line < b.Length() {
 		l := b.Lines[line]
-		for pos < len(l) {
-			cc := l[pos]
 
-			newType := GetRuneType(cc)
-			if runeType != TypeUnknown && newType != TypeSpace && newType != runeType {
-				return line, pos
+		positions := WordStarts(l)
+
+		for _, p := range positions {
+			if p > pos {
+				return line, p
 			}
-			runeType = newType
-
-			pos++
 		}
-		// treat the end-of-line as space since it separates words
-		runeType = TypeSpace
-		pos = 0
+		pos = -1 // make sure we're really smaller, so we will match on pos 0
 		line++
-		// an empty line also matches
-		if line < b.Length() && len(b.Lines[line]) == 0 {
-			return line, pos
-		}
 	}
 	return 0, 0
 }
@@ -99,46 +110,6 @@ func JumpWordForward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
 	return b.Length() - 1, len(b.Lines[b.Length()-1]) - 1
 }
 
-/*
- *
- * Tenzij je op een lege regel zit, of op het eerste niet-ws karakter, kan je binnen de huidige regel de match vinden
- * - als je niet op een whitespace zit dan zit je op een "woord", en dan zoek je dat woord af tot je een karakter tegenkomt
- *   (whitespace, alfanum, separator) en dan een stapje terug
-
- Dit! is een regel? https://www.m3r.nl/?foo=bla
- ^  ^ ^  ^   ^    ^ ^    ^  ^  ^^  ^^ ^ ^  ^^
-
- wat nou als je alle "posities" op een regel opzoekt, en dan de eertvolgende/eerstvorige pakt?
- het zijn dan de posities waar een wisseling gebeurt van type:
- (unknown, alfanum)
- (alfanum, sep)
- (sep, space) <- maar we doen geen space
- (space, alfanum)
-
- Is het niet gewoon alsof je een string reverset?
-*/
-
-// WordStarts Finds al the "word starts" in a given line
-func WordStarts(l ovim.Line) []int {
-	if len(l) == 0 {
-		return []int{0}
-	}
-
-	var res []int
-
-	prevRune := TypeUnknown
-	for pos, c := range l {
-		newRune := GetRuneType(c)
-
-		if prevRune != newRune && newRune != TypeSpace {
-			res = append(res, pos)
-		}
-		prevRune = newRune
-	}
-
-	return res
-}
-
 // JumpBackward implements "b" behaviour, the beginning of the previous sequence of alphanum or other non-whitespace
 func JumpBackward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
 	line, pos := c.Line, c.Pos
@@ -149,13 +120,15 @@ func JumpBackward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
 		lastPos := -1
 
 		for _, p := range positions {
-			if lastPos != -1 && p >= pos {
+			// There must be a previous pos to return, the current one must be larger,
+			// and the previous should be smaller (it could be equal!)
+			if lastPos != -1 && p >= pos && lastPos < pos {
 				return line, lastPos
 			}
 			lastPos = p
 		}
 		// if all matches were smaller than pos, return the last
-		if lastPos != -1 {
+		if lastPos != -1 && lastPos < pos {
 			return line, lastPos
 		}
 
