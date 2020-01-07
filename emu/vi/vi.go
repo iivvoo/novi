@@ -322,6 +322,8 @@ func (em *Vi) JumpWord(r rune, howmany int) {
 				l, p := JumpWordBackward(em.Editor.Buffer, c)
 				c.Line, c.Pos = l, p
 			case 'b':
+				l, p := JumpBackward(em.Editor.Buffer, c)
+				c.Line, c.Pos = l, p
 			}
 		}
 	}

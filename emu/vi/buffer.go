@@ -66,7 +66,7 @@ func JumpForward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
 			return line, pos
 		}
 	}
-	return -1, -1
+	return 0, 0
 }
 
 // JumpWordForward implements "W" behaviour, the begining of the next word
@@ -97,6 +97,75 @@ func JumpWordForward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
 	}
 	// return last character, even if it's space
 	return b.Length() - 1, len(b.Lines[b.Length()-1]) - 1
+}
+
+/*
+ *
+ * Tenzij je op een lege regel zit, of op het eerste niet-ws karakter, kan je binnen de huidige regel de match vinden
+ * - als je niet op een whitespace zit dan zit je op een "woord", en dan zoek je dat woord af tot je een karakter tegenkomt
+ *   (whitespace, alfanum, separator) en dan een stapje terug
+
+ Dit! is een regel? https://www.m3r.nl/?foo=bla
+ ^  ^ ^  ^   ^    ^ ^    ^  ^  ^^  ^^ ^ ^  ^^
+
+ wat nou als je alle "posities" op een regel opzoekt, en dan de eertvolgende/eerstvorige pakt?
+ het zijn dan de posities waar een wisseling gebeurt van type:
+ (unknown, alfanum)
+ (alfanum, sep)
+ (sep, space) <- maar we doen geen space
+ (space, alfanum)
+
+ Is het niet gewoon alsof je een string reverset?
+*/
+
+// WordStarts Finds al the "word starts" in a given line
+func WordStarts(l ovim.Line) []int {
+	if len(l) == 0 {
+		return []int{0}
+	}
+
+	var res []int
+
+	prevRune := TypeUnknown
+	for pos, c := range l {
+		newRune := GetRuneType(c)
+
+		if prevRune != newRune && newRune != TypeSpace {
+			res = append(res, pos)
+		}
+		prevRune = newRune
+	}
+
+	return res
+}
+
+// JumpBackward implements "b" behaviour, the beginning of the previous sequence of alphanum or other non-whitespace
+func JumpBackward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
+	line, pos := c.Line, c.Pos
+
+	for line >= 0 {
+		l := b.Lines[line]
+		positions := WordStarts(l)
+		lastPos := -1
+
+		for _, p := range positions {
+			if lastPos != -1 && p >= pos {
+				return line, lastPos
+			}
+			lastPos = p
+		}
+		// if all matches were smaller than pos, return the last
+		if lastPos != -1 {
+			return line, lastPos
+		}
+
+		// continue to the next line, position cursor at the end
+		line--
+		if line >= 0 {
+			pos = len(b.Lines[line]) + 1 // add one so we're larger than a match at the end
+		}
+	}
+	return 0, 0
 }
 
 // JumpWordBackward implements "B" behaviour, the beginning of the previous word, skipping everything non-alphanum

@@ -112,7 +112,8 @@ func TestJumpWordBackward(t *testing.T) {
 	})
 }
 
-func TestJump(t *testing.T) {
+// Tests "w" behaviour
+func TestJumpForward(t *testing.T) {
 	b := ovim.BuildBuffer("This..isa line/;-with? separators", "", "  leading space",
 		"https://github.com/some/repo.git?foo=a", "last line")
 
@@ -170,5 +171,70 @@ func TestJump(t *testing.T) {
 		l, p := JumpForward(b, c)
 
 		AssertLinePos(t, 1, 0, l, p)
+	})
+}
+
+// Test 'b' behaviour
+func TestJumpBackward(t *testing.T) {
+	b := ovim.BuildBuffer("This..isa line/;-with? separators", "", "  leading space",
+		"https://github.com/some/repo.git?foo=a", "last line")
+
+	t.Run("Find first from end", func(t *testing.T) {
+		c := b.NewCursor(4, 8)
+		l, p := JumpBackward(b, c)
+
+		AssertLinePos(t, 4, 5, l, p)
+	})
+	t.Run("Find first from interpunction", func(t *testing.T) {
+		c := b.NewCursor(0, 16) // - before with
+		l, p := JumpBackward(b, c)
+
+		AssertLinePos(t, 0, 14, l, p)
+	})
+	t.Run("Find previous word", func(t *testing.T) {
+		c := b.NewCursor(0, 14) // / after line
+		l, p := JumpBackward(b, c)
+
+		AssertLinePos(t, 0, 10, l, p)
+	})
+}
+
+func AssertWordMatches(t *testing.T, m []int, exp []int) {
+	t.Helper()
+
+	if len(m) != len(exp) {
+		t.Fatalf("Didn't get equal sized expected/actual:: %v - %v", m, exp)
+	}
+
+	for i, e := range m {
+		if e != exp[i] {
+			t.Errorf("Difference at position %d: got %d but expected %d", i, e, exp[i])
+		}
+	}
+}
+func TestWordStarts(t *testing.T) {
+	t.Run("Empty line", func(t *testing.T) {
+		res := WordStarts(ovim.Line{})
+
+		AssertWordMatches(t, res, []int{0})
+	})
+	t.Run("Expect nothing on all spaces", func(t *testing.T) {
+		res := WordStarts(ovim.Line([]rune("    ")))
+
+		AssertWordMatches(t, res, []int{})
+	})
+	t.Run("Some simple words, variable spaces", func(t *testing.T) {
+		res := WordStarts(ovim.Line([]rune("  this   is  a     test")))
+
+		AssertWordMatches(t, res, []int{2, 9, 13, 19})
+	})
+	t.Run("Mix of alphanum, separator words", func(t *testing.T) {
+		res := WordStarts(ovim.Line([]rune("this, is! a *!@&#^ test")))
+
+		AssertWordMatches(t, res, []int{0, 4, 6, 8, 10, 12, 19})
+	})
+	t.Run("A URL", func(t *testing.T) {
+		res := WordStarts(ovim.Line([]rune("https://www.github.com/sample/repo.git?foo=bar")))
+		AssertWordMatches(t, res, []int{0, 5, 8, 11, 12, 18, 19, 22, 23, 29, 30, 34, 35, 38, 39, 42, 43})
 	})
 }
