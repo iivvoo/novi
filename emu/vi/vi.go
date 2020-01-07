@@ -221,8 +221,8 @@ func (em *Vi) HandleInsertionKeys(ev ovim.Event) bool {
 	case 'a': // after cursor
 		Move(first, ovim.CursorRight)
 	case 'A': // at end
-		// Move will, once implemented correctly, not move far enough!
 		Move(first, ovim.CursorEnd)
+		first.Pos++
 	}
 	return true
 }
@@ -238,7 +238,8 @@ func (em *Vi) HandleAnyRune(ev ovim.Event) bool {
 	r := ev.(*ovim.CharacterEvent).Rune
 	em.Editor.Buffer.PutRuneAtCursors(em.Editor.Cursors, r)
 	for _, c := range em.Editor.Cursors {
-		Move(c, ovim.CursorRight)
+		// Move(CursorRight) won't do since it will restrict to the last character
+		c.Pos++
 	}
 	return true
 }

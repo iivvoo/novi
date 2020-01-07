@@ -10,24 +10,18 @@ func Move(c *ovim.Cursor, movement ovim.CursorDirection) {
 	case ovim.CursorUp:
 		if c.Line > 0 {
 			c.Line--
-			if c.Pos > len(c.Buffer.Lines[c.Line]) {
-				c.Pos = len(c.Buffer.Lines[c.Line])
-			}
 		}
 	case ovim.CursorDown:
 		// weirdness because empty last line that we want to position on
 		if c.Line < len(c.Buffer.Lines)-1 {
 			c.Line++
-			if c.Pos > len(c.Buffer.Lines[c.Line]) {
-				c.Pos = len(c.Buffer.Lines[c.Line])
-			}
 		}
 	case ovim.CursorLeft:
 		if c.Pos > 0 {
 			c.Pos--
 		}
 	case ovim.CursorRight:
-		if c.Pos < len(c.Buffer.Lines[c.Line]) {
+		if c.Pos < len(c.Buffer.Lines[c.Line])-1 {
 			c.Pos++
 		}
 	case ovim.CursorBegin:
@@ -37,6 +31,12 @@ func Move(c *ovim.Cursor, movement ovim.CursorDirection) {
 		if c.Pos < 0 {
 			c.Pos = 0
 		}
+	}
+	if l := len(c.Buffer.Lines[c.Line]); c.Pos >= l {
+		c.Pos = l - 1
+	}
+	if c.Pos < 0 {
+		c.Pos = 0
 	}
 }
 
