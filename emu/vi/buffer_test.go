@@ -27,10 +27,10 @@ func TestJumpWordForward(t *testing.T) {
 		c := b.NewCursor(0, 19) // on 'i' in line
 		l, p := JumpWordForward(b, c)
 
-		AssertLinePos(t, 1, 0, l, p)
+		AssertLinePos(t, 1, -1, l, p)
 	})
 	t.Run("Start from empty line", func(t *testing.T) {
-		c := b.NewCursor(1, 0)
+		c := b.NewCursor(1, -1)
 		l, p := JumpWordForward(b, c)
 
 		AssertLinePos(t, 2, 2, l, p)
@@ -52,6 +52,55 @@ func TestJumpWordForward(t *testing.T) {
 		l, p := JumpWordForward(b, c)
 
 		AssertLinePos(t, 4, 8, l, p)
+	})
+}
+
+func TestJumpWordBackward(t *testing.T) {
+	b := ovim.BuildBuffer("This is the first line.", "", "  leading space",
+		"trailing space   ", "last line")
+
+	t.Run("Find first from end", func(t *testing.T) {
+		c := b.NewCursor(4, 8)
+		l, p := JumpWordBackward(b, c)
+
+		AssertLinePos(t, 4, 5, l, p)
+	})
+	t.Run("Find empty line", func(t *testing.T) {
+		c := b.NewCursor(2, 2) // on 'l' in leading
+		l, p := JumpWordBackward(b, c)
+
+		AssertLinePos(t, 1, 0, l, p)
+	})
+	t.Run("Find from middle of word", func(t *testing.T) {
+		c := b.NewCursor(0, 13) // on 'i' in first
+		l, p := JumpWordBackward(b, c)
+
+		AssertLinePos(t, 0, 12, l, p)
+	})
+	t.Run("Find on previous line", func(t *testing.T) {
+		c := b.NewCursor(4, 0)
+		l, p := JumpWordBackward(b, c)
+
+		AssertLinePos(t, 3, 9, l, p) // 's' in space
+	})
+	t.Run("From/to first word on line", func(t *testing.T) {
+		c := b.NewCursor(3, 3)
+		l, p := JumpWordBackward(b, c)
+
+		AssertLinePos(t, 3, 0, l, p)
+	})
+	t.Run("From/to first word on line", func(t *testing.T) {
+		b := ovim.BuildBuffer("First line", "    second line with spaces")
+		c := b.NewCursor(1, 3) // at space character
+		l, p := JumpWordBackward(b, c)
+
+		AssertLinePos(t, 0, 6, l, p)
+	})
+	t.Run("Jump from empty", func(t *testing.T) {
+		c := b.NewCursor(1, -1)
+		l, p := JumpWordBackward(b, c)
+
+		AssertLinePos(t, 0, 18, l, p)
 	})
 }
 
@@ -106,5 +155,12 @@ func TestJump(t *testing.T) {
 		l, p := JumpForward(b, c)
 
 		AssertLinePos(t, 3, 8, l, p)
+	})
+	t.Run("Jump next line word continues", func(t *testing.T) {
+		b := ovim.BuildBuffer("foo bar", "bla 123")
+		c := b.NewCursor(0, 4) // where we ended the previous test
+		l, p := JumpForward(b, c)
+
+		AssertLinePos(t, 1, 0, l, p)
 	})
 }

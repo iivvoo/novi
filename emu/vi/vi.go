@@ -11,6 +11,7 @@ import (
 /*
  * Lots of stuff to do. Start with basic non-ex (?) commands, controls:
  * insert: iIoOaA OK (single cursor)
+ * regular <enter> in insert mode
  * <num?>gg (top) G (end) of file OK
  * w (jump word), with counter. Keep support for "c<n>w" in mind!
  *  w = non-space? W=true word?
@@ -248,7 +249,7 @@ func (em *Vi) HandleAnyRune(ev ovim.Event) bool {
 
 // HandleCommandBuffer handles all keys that affect the command buffer
 func (em *Vi) HandleCommandBuffer(ev ovim.Event) bool {
-	commands := "gGhjklxXdwWcZQ0123456789$^"
+	commands := "BbgGhjklxXdwWcZQ0123456789$^"
 	r := ev.(*ovim.CharacterEvent).Rune
 
 	if strings.IndexRune(commands, r) != -1 {
@@ -283,7 +284,7 @@ func (em *Vi) CheckExecuteCommandBuffer() bool {
 	case "h", "j", "k", "l":
 		em.MoveCursorRune(rune(command[0]), count)
 		em.CommandBuffer = ""
-	case "w", "W": // "b", "B"
+	case "w", "W", "b", "B":
 		em.JumpWord(rune(command[0]), count)
 		em.CommandBuffer = ""
 	case "x", "X":
@@ -309,12 +310,17 @@ func (em *Vi) CheckExecuteCommandBuffer() bool {
 func (em *Vi) JumpWord(r rune, howmany int) {
 	for i := 0; i < howmany; i++ {
 		for _, c := range em.Editor.Cursors {
-			if r == 'W' {
+			switch r {
+			case 'W':
 				l, p := JumpWordForward(em.Editor.Buffer, c)
 				c.Line, c.Pos = l, p
-			} else { // 'w'
+			case 'w':
 				l, p := JumpForward(em.Editor.Buffer, c)
 				c.Line, c.Pos = l, p
+			case 'B':
+				l, p := JumpWordBackward(em.Editor.Buffer, c)
+				c.Line, c.Pos = l, p
+			case 'b':
 			}
 		}
 	}
