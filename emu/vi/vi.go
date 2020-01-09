@@ -107,6 +107,7 @@ func NewVi(e *ovim.Editor) *Vi {
 		Dispatch{Mode: ModeEdit, Event: ovim.KeyEvent{Key: ovim.KeyEscape}, Handler: em.HandleToModeCommand},
 		Dispatch{Mode: ModeCommand, Event: ovim.KeyEvent{Key: ovim.KeyEscape}, Handler: em.HandleCommandClear},
 		Dispatch{Mode: ModeCommand, Event: ovim.KeyEvent{Key: ovim.KeyEnter}, Handler: em.HandleCommandEnter},
+		Dispatch{Mode: ModeEdit, Event: ovim.KeyEvent{Key: ovim.KeyEnter}, Handler: em.HandleEditEnter},
 		Dispatch{Mode: ModeCommand, Events: []ovim.Event{
 			ovim.CharacterEvent{Rune: 'i'},
 			ovim.CharacterEvent{Rune: 'I'},
@@ -141,6 +142,21 @@ func (em *Vi) HandleCommandEnter(ev ovim.Event) bool {
 	for _, c := range em.Editor.Cursors {
 		Move(c, ovim.CursorDown)
 		Move(c, ovim.CursorBegin)
+	}
+	return true
+}
+
+// HandleEditEnter handles enter in insert mode
+func (em *Vi) HandleEditEnter(ev ovim.Event) bool {
+	// XXX identical to "basic" emulation
+	for _, c := range em.Editor.Cursors {
+		em.Editor.Buffer.SplitLine(c)
+		Move(c, ovim.CursorDown)
+		Move(c, ovim.CursorBegin)
+		// update all cursors after
+		for _, ca := range em.Editor.Cursors.After(c) {
+			ca.Line++
+		}
 	}
 	return true
 }

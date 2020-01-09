@@ -90,7 +90,7 @@ func (b *Buffer) RemoveRuneBeforeCursor(c *Cursor) {
 	b.Modified = true
 }
 
-/* SplitLines
+/* SplitLine
  *
  * Split lines at position of cursors.
  * This is tricky since it will create extra lines, which may affect cursors below
@@ -100,15 +100,11 @@ func (b *Buffer) RemoveRuneBeforeCursor(c *Cursor) {
  * If we return some generic modification detail, we may be able to automatically update
  * cursors?
  */
-func (b *Buffer) SplitLines(cs Cursors) {
-	linesAdded := 0
-	for _, c := range cs {
-		line := b.Lines[c.Line+linesAdded]
-		before, after := line[c.Pos:], line[:c.Pos]
-		b.Lines = append(b.Lines[:c.Line+linesAdded],
-			append([]Line{after, before}, b.Lines[c.Line+linesAdded+1:]...)...)
-		linesAdded++
-	}
+func (b *Buffer) SplitLine(c *Cursor) {
+	line := b.Lines[c.Line]
+	before, after := line[c.Pos:], line[:c.Pos]
+	b.Lines = append(b.Lines[:c.Line],
+		append([]Line{after, before}, b.Lines[c.Line+1:]...)...)
 	b.Modified = true
 }
 

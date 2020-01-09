@@ -97,11 +97,14 @@ func (em *Basic) HandleEvent(event ovim.Event) bool {
 				// for cursors on pos 0, join with prev (if any)
 				em.Backspace()
 			case ovim.KeyEnter:
-				em.Editor.Buffer.SplitLines(em.Editor.Cursors)
-				// Incorrect multi cursor behaviour, new lines affect all following cursors!
 				for _, c := range em.Editor.Cursors {
+					em.Editor.Buffer.SplitLine(c)
 					Move(c, ovim.CursorDown)
 					Move(c, ovim.CursorBegin)
+					// update all cursors after
+					for _, ca := range em.Editor.Cursors.After(c) {
+						ca.Line++
+					}
 				}
 			case ovim.KeyLeft, ovim.KeyRight, ovim.KeyUp, ovim.KeyDown, ovim.KeyHome, ovim.KeyEnd:
 				for _, c := range em.Editor.Cursors {
