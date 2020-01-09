@@ -9,6 +9,10 @@ import (
 )
 
 /*
+ *
+ * enter in commandmode = down+home
+ * enter in insert mode will add new line
+ *
  * Lots of stuff to do. Start with basic non-ex (?) commands, controls:
  * insert: iIoOaA OK (single cursor)
  * regular <enter> in insert mode
@@ -88,6 +92,12 @@ type Vi struct {
  * Escape in command mode clears command buffer
  *
  * Approach: put everything in a buffer. After each key, check of buffer is a complete command
+ *
+ * Vim extra's:
+ * insert keys can be commands/repeated: 3iYes 3oHello
+ * e/E go to end of word, similar to w/W
+ * 'r' replace single character under cursor, can also be used with count 5ra -> replace with aaaaa
+ * c|d<n>w werkt net iets anders dan regulier w - verandert tot voor matchend woord, whitespace in tact
  */
 
 // NewVi creates/setups up a new Vi emulation instance
@@ -96,6 +106,7 @@ func NewVi(e *ovim.Editor) *Vi {
 	dispatch := []Dispatch{
 		Dispatch{Mode: ModeEdit, Event: ovim.KeyEvent{Key: ovim.KeyEscape}, Handler: em.HandleToModeCommand},
 		Dispatch{Mode: ModeCommand, Event: ovim.KeyEvent{Key: ovim.KeyEscape}, Handler: em.HandleCommandClear},
+		Dispatch{Mode: ModeCommand, Event: ovim.KeyEvent{Key: ovim.KeyEnter}, Handler: em.HandleCommandEnter},
 		Dispatch{Mode: ModeCommand, Events: []ovim.Event{
 			ovim.CharacterEvent{Rune: 'i'},
 			ovim.CharacterEvent{Rune: 'I'},
@@ -123,6 +134,15 @@ func NewVi(e *ovim.Editor) *Vi {
 	}
 	em.dispatch = dispatch
 	return em
+}
+
+// HandleCommandEnter handles enter in command mode
+func (em *Vi) HandleCommandEnter(ev ovim.Event) bool {
+	for _, c := range em.Editor.Cursors {
+		Move(c, ovim.CursorDown)
+		Move(c, ovim.CursorBegin)
+	}
+	return true
 }
 
 // HandleBackspace handles backspace behaviour in both edit and command mode
