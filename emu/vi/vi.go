@@ -184,9 +184,9 @@ func (em *Vi) HandleBackspace(ev ovim.Event) bool {
 				l := c.Line
 				Move(c, ovim.CursorUp)
 				Move(c, ovim.CursorEnd)
+				em.Editor.Buffer.JoinLineWithPrevious(l)
 				// except here, since "End" in vi moves to the last character, not past it, for which we need to compensate
 				Move(c, ovim.CursorRight)
-				em.Editor.Buffer.JoinLineWithPrevious(l)
 
 				for _, cc := range em.Editor.Cursors.After(c) {
 					Move(cc, ovim.CursorUp)
