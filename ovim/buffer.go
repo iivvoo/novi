@@ -46,6 +46,15 @@ func (b *Buffer) Length() int {
 	return len(b.Lines)
 }
 
+// Validate verifies and makes sure the buffer has a valid state
+func (b *Buffer) Validate() bool {
+	if b.Length() == 0 {
+		b.Lines = []Line{Line{}}
+		return false
+	}
+	return true
+}
+
 // GetLines attempts to retun the lines between start/end
 func (b *Buffer) GetLines(start, end int) []Line {
 	if start > b.Length() {
@@ -58,7 +67,6 @@ func (b *Buffer) GetLines(start, end int) []Line {
 		end = b.Length()
 	}
 	return b.Lines[start:end]
-
 }
 
 // AddLine adds a line to the bottom of the buffer
@@ -143,6 +151,7 @@ func (b *Buffer) RemoveLine(line int) bool {
 	}
 	b.Lines = append(b.Lines[:line], b.Lines[line+1:]...)
 	b.Modified = true
+	b.Validate()
 	return true
 }
 

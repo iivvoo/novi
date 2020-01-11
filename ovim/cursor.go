@@ -42,8 +42,11 @@ func (c *Cursor) Validate() bool {
 		c.Line = c.Buffer.Length() - 1
 		valid = false
 	}
-	// (-1, 0) currently is somewhat of a valid position
+
+	// XXX if we assert that the buffer always has at least 1 (empty)
+	// line then c.Line can't be < 0
 	if c.Line < 0 {
+		c.Line = 0
 		c.Pos = 0
 		valid = false
 	} else if c.Pos >= len(c.Buffer.Lines[c.Line]) {

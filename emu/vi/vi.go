@@ -10,26 +10,29 @@ import (
 
 /*
  *
- * enter in commandmode = down+home
- * enter in insert mode will add new line
- *
  * Lots of stuff to do. Start with basic non-ex (?) commands, controls:
  * insert: iIoOaA OK (single cursor)
- * regular <enter> in insert mode
+ * D - delete (+ insert) to EOL
+ * C - change to EOL
+ * regular <enter> in insert mode OK
+ * HML - high / middle / low (screen, niet file)
+ * vi scrolls few lines before top/bottom, not at
  * <num?>gg (top) G (end) of file OK
  * w (jump word), with counter. Keep support for "c<n>w" in mind!
  *  w = non-space? W=true word?
  *  c<N>w and d<N>w are simiar (c is d with insert)
- * ZQ to exit without save
+ * ZQ to exit without save OK
  * copy/paste (non/term/mouse: y, p etc)
  * commands: d10d, c5w, 10x, etc.
  * proper tab support
+ * ^R" (paste buffer magic) in insert mode
  *
  * Could/should we support multiple cursors for vi emulation?
  * vim itself provides ctrl-v which is a bit like a multi-cursor, but not all command work on it
  *  (e.g. o or O have no effect. 'i' does have effecti, 'a' doesn't. Perhaps vim limitation?)
  *
  * '.' replays last command - we need a way to "store" this (is storing the keypresses sufficient?)
+ *
  */
 
 var log = logger.GetLogger("viemu")
@@ -213,6 +216,20 @@ func (em *Vi) RemoveCharacters(howmany int, before bool) {
 	}
 }
 
+// RemoveLines removes full lines
+func (em *Vi) RemoveLines(howmany int) {
+	// How would this behave on multiple cursors?
+	first := em.Editor.Cursors[0]
+	for i := 0; i < howmany; i++ {
+		if !em.Editor.Buffer.RemoveLine(first.Line) {
+			// We ran out of lines, no need to continue, but do move up
+			Move(first, ovim.CursorUp)
+			break
+		}
+	}
+	first.Validate()
+}
+
 // JumpStartEndLine handles jumping to the start/end of line
 func (em *Vi) JumpStartEndLine(howmany int, jumpstart bool) {
 	for _, c := range em.Editor.Cursors {
@@ -286,7 +303,7 @@ func (em *Vi) HandleAnyRune(ev ovim.Event) bool {
 
 // HandleCommandBuffer handles all keys that affect the command buffer
 func (em *Vi) HandleCommandBuffer(ev ovim.Event) bool {
-	commands := "BbgGhjklxXdwWcZQ0123456789$^"
+	commands := "BbdgGhjklxXdwWcZQ0123456789$^"
 	r := ev.(*ovim.CharacterEvent).Rune
 
 	if strings.IndexRune(commands, r) != -1 {
@@ -339,6 +356,9 @@ func (em *Vi) CheckExecuteCommandBuffer() bool {
 	case "ZQ":
 		em.CommandBuffer = ""
 		return false // signals exit
+	case "dd":
+		em.RemoveLines(count)
+		em.CommandBuffer = ""
 	}
 	return true
 }
