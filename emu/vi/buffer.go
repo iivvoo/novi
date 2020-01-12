@@ -108,36 +108,27 @@ func JumpForward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
 		pos = -1 // make sure we're really smaller, so we will match on pos 0
 		line++
 	}
-	return 0, 0
+	return b.Length() - 1, len(b.Lines[b.Length()-1]) - 1
 }
 
 // JumpWordForward implements "W" behaviour, the begining of the next word
 func JumpWordForward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
-	// cursor does not have to be bound to buffer
-
 	line, pos := c.Line, c.Pos
 
-	sepFound := false
 	for line < b.Length() {
 		l := b.Lines[line]
-		for pos < len(l) {
-			cc := l[pos]
-			if unicode.IsSpace(cc) {
-				sepFound = true
-			} else if sepFound {
-				return line, pos
+
+		positions := WordStarts(l, true)
+
+		for _, p := range positions {
+			if p > pos {
+				return line, p
 			}
-			pos++
 		}
-		sepFound = true
-		// did we advance to a completely empty line? Then that's also a valid match
+		pos = -1 // make sure we're really smaller, so we will match on pos 0
 		line++
-		pos = 0
-		if line < b.Length() && len(b.Lines[line]) == 0 {
-			return line, 0
-		}
 	}
-	// return last character, even if it's space
+	// jump to the very last character in the buffer
 	return b.Length() - 1, len(b.Lines[b.Length()-1]) - 1
 }
 
