@@ -219,28 +219,99 @@ func AssertWordMatches(t *testing.T, m []int, exp []int) {
 	}
 }
 func TestWordStarts(t *testing.T) {
+	// Words are sequences of alphanum *or* sequences of separators
 	t.Run("Empty line", func(t *testing.T) {
-		res := WordStarts(ovim.Line{})
+		res := WordStarts(ovim.Line{}, false)
 
 		AssertWordMatches(t, res, []int{0})
 	})
 	t.Run("Expect nothing on all spaces", func(t *testing.T) {
-		res := WordStarts(ovim.Line([]rune("    ")))
+		res := WordStarts(ovim.Line([]rune("    ")), false)
 
 		AssertWordMatches(t, res, []int{})
 	})
 	t.Run("Some simple words, variable spaces", func(t *testing.T) {
-		res := WordStarts(ovim.Line([]rune("  this   is  a     test")))
+		res := WordStarts(ovim.Line([]rune("  this   is  a     test")), false)
 
 		AssertWordMatches(t, res, []int{2, 9, 13, 19})
 	})
 	t.Run("Mix of alphanum, separator words", func(t *testing.T) {
-		res := WordStarts(ovim.Line([]rune("this, is! a *!@&#^ test")))
+		res := WordStarts(ovim.Line([]rune("this, is! a *!@&#^ test")), false)
 
 		AssertWordMatches(t, res, []int{0, 4, 6, 8, 10, 12, 19})
 	})
 	t.Run("A URL", func(t *testing.T) {
-		res := WordStarts(ovim.Line([]rune("https://www.github.com/sample/repo.git?foo=bar")))
+		res := WordStarts(ovim.Line([]rune("https://www.github.com/sample/repo.git?foo=bar")), false)
 		AssertWordMatches(t, res, []int{0, 5, 8, 11, 12, 18, 19, 22, 23, 29, 30, 34, 35, 38, 39, 42, 43})
+	})
+
+	// Words are sequences of alphanum *or* separators
+	t.Run("Empty line (same)", func(t *testing.T) {
+		res := WordStarts(ovim.Line{}, true)
+
+		AssertWordMatches(t, res, []int{0})
+	})
+	t.Run("Expect nothing on all spaces (same)", func(t *testing.T) {
+		res := WordStarts(ovim.Line([]rune("    ")), true)
+
+		AssertWordMatches(t, res, []int{})
+	})
+	t.Run("Some simple words, variable spaces (same)", func(t *testing.T) {
+		res := WordStarts(ovim.Line([]rune("  this   is  a     test")), true)
+
+		AssertWordMatches(t, res, []int{2, 9, 13, 19})
+	})
+	t.Run("Mix of alphanum, separator words (same)", func(t *testing.T) {
+		res := WordStarts(ovim.Line([]rune("this, is! a *!@&#^ !test!")), true)
+
+		AssertWordMatches(t, res, []int{0, 6, 10, 12, 19})
+	})
+	t.Run("A URL (same)", func(t *testing.T) {
+		res := WordStarts(ovim.Line([]rune("https://www.github.com/sample/repo.git?foo=bar")), true)
+		AssertWordMatches(t, res, []int{0})
+	})
+}
+
+func TestWordEnds(t *testing.T) {
+	// Treat alnum/separators separately
+	t.Run("Empty line", func(t *testing.T) {
+		res := WordEnds(ovim.Line{}, false)
+
+		AssertWordMatches(t, res, []int{0})
+	})
+	t.Run("Expect nothing on all spaces", func(t *testing.T) {
+		res := WordEnds(ovim.Line([]rune("    ")), false)
+
+		AssertWordMatches(t, res, []int{})
+	})
+	t.Run("Simple test on letters and spaces", func(t *testing.T) {
+		res := WordEnds(ovim.Line([]rune(" this   is  a     test ")), false)
+		AssertWordMatches(t, res, []int{21, 12, 9, 4})
+	})
+	t.Run("Mix of alphanum, separator words", func(t *testing.T) {
+		res := WordEnds(ovim.Line([]rune("this, is! a *!@&#^ test")), false)
+
+		AssertWordMatches(t, res, []int{22, 17, 10, 8, 7, 4, 3})
+	})
+	t.Run("A URL", func(t *testing.T) {
+		res := WordEnds(ovim.Line([]rune("https://www.github.com/sample/repo.git?foo=bar")), false)
+		AssertWordMatches(t, res, []int{45, 42, 41, 38, 37, 34, 33, 29, 28, 22, 21, 18, 17, 11, 10, 7, 4})
+	})
+
+	// Treat alnum/separators as the same for defining words
+	t.Run("Empty line (same)", func(t *testing.T) {
+		res := WordEnds(ovim.Line{}, true)
+
+		AssertWordMatches(t, res, []int{0})
+	})
+	t.Run("Expect nothing on all spaces (same)", func(t *testing.T) {
+		res := WordEnds(ovim.Line([]rune("    ")), true)
+
+		AssertWordMatches(t, res, []int{})
+	})
+	t.Run("Mix of alphanum, separator words (same)", func(t *testing.T) {
+		res := WordEnds(ovim.Line([]rune("this, is! a *!@&#^ !test!")), true)
+
+		AssertWordMatches(t, res, []int{24, 17, 10, 8, 4})
 	})
 }

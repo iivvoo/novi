@@ -40,7 +40,7 @@ func GetRuneType(r rune) RuneType {
 }
 
 // WordStarts Finds al the "word starts" in a given line
-func WordStarts(l ovim.Line) []int {
+func WordStarts(l ovim.Line, SepAndAlnum bool) []int {
 	if len(l) == 0 {
 		return []int{0}
 	}
@@ -51,12 +51,43 @@ func WordStarts(l ovim.Line) []int {
 	for pos, c := range l {
 		newRune := GetRuneType(c)
 
+		if SepAndAlnum && newRune == TypeSep {
+			newRune = TypeAlNum
+		}
 		if prevRune != newRune && newRune != TypeSpace {
 			res = append(res, pos)
 		}
 		prevRune = newRune
 	}
 
+	return res
+}
+
+// WordEnds finds all the endings of words in a given line.
+// words are either sequences of alphanum or non-whitespace,
+// e,g ab123 []=-- or sequences of alphanum *and* non-ws
+// This. is a?!@ sentence...
+//    ^^  ^
+func WordEnds(l ovim.Line, SepAndAlnum bool) []int {
+	if len(l) == 0 {
+		return []int{0}
+	}
+
+	var res []int
+
+	prevRune := TypeUnknown
+	for i := len(l) - 1; i >= 0; i-- {
+		newRune := GetRuneType(l[i])
+
+		// treat separators like alnum?
+		if SepAndAlnum && newRune == TypeSep {
+			newRune = TypeAlNum
+		}
+		if prevRune != newRune && newRune != TypeSpace {
+			res = append(res, i)
+		}
+		prevRune = newRune
+	}
 	return res
 }
 
@@ -67,7 +98,7 @@ func JumpForward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
 	for line < b.Length() {
 		l := b.Lines[line]
 
-		positions := WordStarts(l)
+		positions := WordStarts(l, false)
 
 		for _, p := range positions {
 			if p > pos {
@@ -116,7 +147,7 @@ func JumpBackward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
 
 	for line >= 0 {
 		l := b.Lines[line]
-		positions := WordStarts(l)
+		positions := WordStarts(l, false)
 		lastPos := -1
 
 		for _, p := range positions {

@@ -301,9 +301,24 @@ func (em *Vi) HandleAnyRune(ev ovim.Event) bool {
 	return true
 }
 
+// ReplaceDeleteWords handles the cw and dw commands
+func (em *Vi) ReplaceDeleteWords(howmany int, change bool) {
+	// difference cw/dw: cursor postion and mode after operation
+	if change {
+		// find nth word
+		// find end of prev (alnum) word before
+		// delete until there (multi line)
+		// go to insert mode
+		em.Mode = ModeEdit
+	} else {
+		// find nth word
+		// delete until there (multi-line)
+	}
+}
+
 // HandleCommandBuffer handles all keys that affect the command buffer
 func (em *Vi) HandleCommandBuffer(ev ovim.Event) bool {
-	commands := "BbdgGhjklxXdwWcZQ0123456789$^"
+	commands := "cBbdgGhjklxXdwWZQ0123456789$^"
 	r := ev.(*ovim.CharacterEvent).Rune
 
 	if strings.IndexRune(commands, r) != -1 {
@@ -358,6 +373,9 @@ func (em *Vi) CheckExecuteCommandBuffer() bool {
 		return false // signals exit
 	case "dd":
 		em.RemoveLines(count)
+		em.CommandBuffer = ""
+	case "cw", "dw":
+		em.ReplaceDeleteWords(count, command == "cw")
 		em.CommandBuffer = ""
 	}
 	return true
