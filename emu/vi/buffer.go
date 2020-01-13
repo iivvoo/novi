@@ -1,7 +1,6 @@
 package viemu
 
 import (
-	"fmt"
 	"unicode"
 
 	"github.com/iivvoo/ovim/ovim"
@@ -166,44 +165,30 @@ func JumpBackward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
 // JumpWordBackward implements "B" behaviour, the beginning of the previous word, skipping everything non-alphanum
 func JumpWordBackward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
 	line, pos := c.Line, c.Pos
-	lastLine, lastPos := line, pos
-
-	wordFound := false
-	didMove := false
 
 	for line >= 0 {
 		l := b.Lines[line]
-		// if we advanced at least one character and ended up on an empty line, we're good
-		if didMove && len(l) == 0 {
-			return line, 0
-		}
-		// pos is the position where we could insert, but it doesn't mean there's already a character there
-		// mostly relevant on empty lines
-		for pos >= 0 && pos < len(l) {
-			cc := l[pos]
-			if didMove && (unicode.IsLetter(cc) || unicode.IsNumber(cc)) {
-				wordFound = true
-			} else if wordFound {
-				// we found a word, now a non-alphanum, so our desired position is the
-				// previous
+		positions := WordStarts(l, true)
+		lastPos := -1
+
+		for _, p := range positions {
+			// There must be a previous pos to return, the current one must be larger,
+			// and the previous should be smaller (it could be equal!)
+			if lastPos != -1 && p >= pos && lastPos < pos {
 				return line, lastPos
 			}
-			lastPos = pos
-			pos--
-			didMove = true
+			lastPos = p
 		}
-		// if we scanned letters but ended up on pos 0, that's also the start of a word
-		if wordFound {
-			// does this cover all cases?
-			return line, 0
+		// if all matches were smaller than pos, return the last
+		if lastPos != -1 && lastPos < pos {
+			return line, lastPos
 		}
-		lastLine = line
+
+		// continue to the next line, position cursor at the end
 		line--
 		if line >= 0 {
-			pos = len(b.Lines[line]) - 1
+			pos = len(b.Lines[line]) + 1 // add one so we're larger than a match at the end
 		}
-		didMove = true
 	}
-	fmt.Println(lastLine)
 	return 0, 0
 }
