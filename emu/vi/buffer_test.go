@@ -205,6 +205,54 @@ func TestJumpBackward(t *testing.T) {
 	})
 }
 
+func TestJumpForwardEnd(t *testing.T) {
+	b := ovim.BuildBuffer("This..isa line/;-with? separators", "", "  leading space",
+		"https://github.com/some/repo.git?foo=a", "last line")
+
+	t.Run("Find first from start", func(t *testing.T) {
+		c := b.NewCursor(0, 0)
+		l, p := JumpForwardEnd(b, c)
+
+		AssertLinePos(t, 0, 3, l, p)
+	})
+	t.Run("Find first from interpunction", func(t *testing.T) {
+		c := b.NewCursor(0, 3)
+		l, p := JumpForwardEnd(b, c)
+
+		AssertLinePos(t, 0, 5, l, p)
+	})
+	t.Run("Find next line URL", func(t *testing.T) {
+		c := b.NewCursor(2, 14) // end line 3
+		l, p := JumpForwardEnd(b, c)
+
+		AssertLinePos(t, 3, 4, l, p) // end of https
+	})
+}
+
+func TestJumpWordForwardEnd(t *testing.T) {
+	b := ovim.BuildBuffer("This..isa line/;-with? separators", "", "  leading space",
+		"https://github.com/some/repo.git?foo=a", "last line")
+
+	t.Run("Find first from start", func(t *testing.T) {
+		c := b.NewCursor(0, 0)
+		l, p := JumpWordForwardEnd(b, c)
+
+		AssertLinePos(t, 0, 8, l, p)
+	})
+	t.Run("Find first from interpunction", func(t *testing.T) {
+		c := b.NewCursor(0, 8)
+		l, p := JumpWordForwardEnd(b, c)
+
+		AssertLinePos(t, 0, 21, l, p) // ? after with
+	})
+	t.Run("Find next line URL", func(t *testing.T) {
+		c := b.NewCursor(2, 14) // end line 3
+		l, p := JumpWordForwardEnd(b, c)
+
+		AssertLinePos(t, 3, 37, l, p) // end of URL
+	})
+}
+
 func AssertWordMatches(t *testing.T, m []int, exp []int) {
 	t.Helper()
 
@@ -291,11 +339,11 @@ func TestWordEnds(t *testing.T) {
 	t.Run("Mix of alphanum, separator words", func(t *testing.T) {
 		res := WordEnds(ovim.Line([]rune("this, is! a *!@&#^ test")), false)
 
-		AssertWordMatches(t, res, []int{22, 17, 10, 8, 7, 4, 3})
+		AssertWordMatches(t, res, []int{3, 4, 7, 8, 10, 17, 22})
 	})
 	t.Run("A URL", func(t *testing.T) {
 		res := WordEnds(ovim.Line([]rune("https://www.github.com/sample/repo.git?foo=bar")), false)
-		AssertWordMatches(t, res, []int{45, 42, 41, 38, 37, 34, 33, 29, 28, 22, 21, 18, 17, 11, 10, 7, 4})
+		AssertWordMatches(t, res, []int{4, 7, 10, 11, 17, 18, 21, 22, 28, 29, 33, 34, 37, 38, 41, 42, 45})
 	})
 
 	// Treat alnum/separators as the same for defining words
@@ -312,6 +360,6 @@ func TestWordEnds(t *testing.T) {
 	t.Run("Mix of alphanum, separator words (same)", func(t *testing.T) {
 		res := WordEnds(ovim.Line([]rune("this, is! a *!@&#^ !test!")), true)
 
-		AssertWordMatches(t, res, []int{24, 17, 10, 8, 4})
+		AssertWordMatches(t, res, []int{4, 8, 10, 17, 24})
 	})
 }
