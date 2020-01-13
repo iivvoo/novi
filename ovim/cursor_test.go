@@ -94,8 +94,8 @@ func TestCursorValidate(t *testing.T) {
 		if c.Validate() {
 			t.Errorf("Cursor did validate but I did expect it not to.")
 		}
-		if c.Line != -1 || c.Pos != 0 {
-			t.Errorf("Expected cursor to be placed at (-1, 0) but got (%d, %d)", c.Line, c.Pos)
+		if c.Line != 0 || c.Pos != 0 {
+			t.Errorf("Expected cursor to be placed at (0, 0) but got (%d, %d)", c.Line, c.Pos)
 		}
 	})
 }
