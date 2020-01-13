@@ -90,14 +90,15 @@ func WordEnds(l ovim.Line, SepAndAlnum bool) []int {
 	return res
 }
 
-// JumpForward jumps to the next sequence of alphanum or separators, skipping whitespace
-func JumpForward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
+// JumpAlNumSepForward jumps to the start of the next word. alnumSepSame defines if
+// words include separators, or if they count as separate words
+func JumpAlNumSepForward(b *ovim.Buffer, c *ovim.Cursor, alnumSepSame bool) (int, int) {
 	line, pos := c.Line, c.Pos
 
 	for line < b.Length() {
 		l := b.Lines[line]
 
-		positions := WordStarts(l, false)
+		positions := WordStarts(l, alnumSepSame)
 
 		for _, p := range positions {
 			if p > pos {
@@ -108,87 +109,58 @@ func JumpForward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
 		line++
 	}
 	return b.Length() - 1, len(b.Lines[b.Length()-1]) - 1
+}
+
+// JumpForward jumps to the next sequence of alphanum or separators, skipping whitespace
+func JumpForward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
+	return JumpAlNumSepForward(b, c, false)
 }
 
 // JumpWordForward implements "W" behaviour, the begining of the next word
 func JumpWordForward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
+	return JumpAlNumSepForward(b, c, true)
+}
+
+// JumpAlNumSepBackward jumps to the start of the previous word. alnumSepSame defines if
+// words include separators, or if they count as separate words
+func JumpAlNumSepBackward(b *ovim.Buffer, c *ovim.Cursor, alnumSepSame bool) (int, int) {
 	line, pos := c.Line, c.Pos
 
-	for line < b.Length() {
+	for line >= 0 {
 		l := b.Lines[line]
-
-		positions := WordStarts(l, true)
+		positions := WordStarts(l, alnumSepSame)
+		lastPos := -1
 
 		for _, p := range positions {
-			if p > pos {
-				return line, p
+			// There must be a previous pos to return, the current one must be larger,
+			// and the previous should be smaller (it could be equal!)
+			if lastPos != -1 && p >= pos && lastPos < pos {
+				return line, lastPos
 			}
+			lastPos = p
 		}
-		pos = -1 // make sure we're really smaller, so we will match on pos 0
-		line++
+		// if all matches were smaller than pos, return the last
+		if lastPos != -1 && lastPos < pos {
+			return line, lastPos
+		}
+
+		// continue to the next line, position cursor at the end
+		line--
+		if line >= 0 {
+			pos = len(b.Lines[line]) + 1 // add one so we're larger than a match at the end
+		}
 	}
-	// jump to the very last character in the buffer
-	return b.Length() - 1, len(b.Lines[b.Length()-1]) - 1
+	return 0, 0
 }
 
 // JumpBackward implements "b" behaviour, the beginning of the previous sequence of alphanum or other non-whitespace
 func JumpBackward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
-	line, pos := c.Line, c.Pos
-
-	for line >= 0 {
-		l := b.Lines[line]
-		positions := WordStarts(l, false)
-		lastPos := -1
-
-		for _, p := range positions {
-			// There must be a previous pos to return, the current one must be larger,
-			// and the previous should be smaller (it could be equal!)
-			if lastPos != -1 && p >= pos && lastPos < pos {
-				return line, lastPos
-			}
-			lastPos = p
-		}
-		// if all matches were smaller than pos, return the last
-		if lastPos != -1 && lastPos < pos {
-			return line, lastPos
-		}
-
-		// continue to the next line, position cursor at the end
-		line--
-		if line >= 0 {
-			pos = len(b.Lines[line]) + 1 // add one so we're larger than a match at the end
-		}
-	}
-	return 0, 0
+	return JumpAlNumSepBackward(b, c, false)
 }
 
 // JumpWordBackward implements "B" behaviour, the beginning of the previous word, skipping everything non-alphanum
 func JumpWordBackward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
-	line, pos := c.Line, c.Pos
-
-	for line >= 0 {
-		l := b.Lines[line]
-		positions := WordStarts(l, true)
-		lastPos := -1
-
-		for _, p := range positions {
-			// There must be a previous pos to return, the current one must be larger,
-			// and the previous should be smaller (it could be equal!)
-			if lastPos != -1 && p >= pos && lastPos < pos {
-				return line, lastPos
-			}
-			lastPos = p
-		}
-		// if all matches were smaller than pos, return the last
-		if lastPos != -1 && lastPos < pos {
-			return line, lastPos
-		}
-
-		// continue to the next line, position cursor at the end
-		line--
-		if line >= 0 {
-			pos = len(b.Lines[line]) + 1 // add one so we're larger than a match at the end
-		}
-	}
-	return 0, 0
+	return JumpAlNumSepBackward(b, c, true)
 }
+
+// JumpWordEnd
