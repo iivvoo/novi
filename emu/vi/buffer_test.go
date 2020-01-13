@@ -209,7 +209,7 @@ func AssertWordMatches(t *testing.T, m []int, exp []int) {
 	t.Helper()
 
 	if len(m) != len(exp) {
-		t.Fatalf("Didn't get equal sized expected/actual:: %v - %v", m, exp)
+		t.Fatalf("Didn't get equal sized expected/actual: %v - %v", m, exp)
 	}
 
 	for i, e := range m {
@@ -286,7 +286,7 @@ func TestWordEnds(t *testing.T) {
 	})
 	t.Run("Simple test on letters and spaces", func(t *testing.T) {
 		res := WordEnds(ovim.Line([]rune(" this   is  a     test ")), false)
-		AssertWordMatches(t, res, []int{21, 12, 9, 4})
+		AssertWordMatches(t, res, []int{4, 9, 12, 21})
 	})
 	t.Run("Mix of alphanum, separator words", func(t *testing.T) {
 		res := WordEnds(ovim.Line([]rune("this, is! a *!@&#^ test")), false)

@@ -83,7 +83,8 @@ func WordEnds(l ovim.Line, SepAndAlnum bool) []int {
 			newRune = TypeAlNum
 		}
 		if prevRune != newRune && newRune != TypeSpace {
-			res = append(res, i)
+			// reverse append
+			res = append([]int{i}, res...)
 		}
 		prevRune = newRune
 	}
@@ -163,4 +164,33 @@ func JumpWordBackward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
 	return JumpAlNumSepBackward(b, c, true)
 }
 
-// JumpWordEnd
+// JumpAlNumSepForwardEnd jumps to the end of the next word. alnumSepSame defines if
+// words include separators, or if they count as separate words
+func JumpAlNumSepForwardEnd(b *ovim.Buffer, c *ovim.Cursor, alnumSepSame bool) (int, int) {
+	line, pos := c.Line, c.Pos
+
+	for line < b.Length() {
+		l := b.Lines[line]
+
+		positions := WordEnds(l, alnumSepSame)
+
+		for _, p := range positions {
+			if p > pos {
+				return line, p
+			}
+		}
+		pos = -1 // make sure we're really smaller, so we will match on pos 0
+		line++
+	}
+	return b.Length() - 1, len(b.Lines[b.Length()-1]) - 1
+}
+
+// JumpForwardEnd implements "b" behaviour, the beginning of the previous sequence of alphanum or other non-whitespace
+func JumpForwardEnd(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
+	return JumpAlNumSepForwardEnd(b, c, false)
+}
+
+// JumpWordForwardEnd implements "B" behaviour, the beginning of the previous word, skipping everything non-alphanum
+func JumpWordForwardEnd(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
+	return JumpAlNumSepForwardEnd(b, c, true)
+}

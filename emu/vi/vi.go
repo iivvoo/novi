@@ -318,7 +318,7 @@ func (em *Vi) ReplaceDeleteWords(howmany int, change bool) {
 
 // HandleCommandBuffer handles all keys that affect the command buffer
 func (em *Vi) HandleCommandBuffer(ev ovim.Event) bool {
-	commands := "cBbdgGhjklxXdwWZQ0123456789$^"
+	commands := "BbcdeEgGhjklxXdwWZQ0123456789$^"
 	r := ev.(*ovim.CharacterEvent).Rune
 
 	if strings.IndexRune(commands, r) != -1 {
@@ -353,7 +353,7 @@ func (em *Vi) CheckExecuteCommandBuffer() bool {
 	case "h", "j", "k", "l":
 		em.MoveCursorRune(rune(command[0]), count)
 		em.CommandBuffer = ""
-	case "w", "W", "b", "B":
+	case "w", "W", "b", "B", "e", "E":
 		em.JumpWord(rune(command[0]), count)
 		em.CommandBuffer = ""
 	case "x", "X":
@@ -397,6 +397,12 @@ func (em *Vi) JumpWord(r rune, howmany int) {
 				c.Line, c.Pos = l, p
 			case 'b':
 				l, p := JumpBackward(em.Editor.Buffer, c)
+				c.Line, c.Pos = l, p
+			case 'E':
+				l, p := JumpForwardEnd(em.Editor.Buffer, c)
+				c.Line, c.Pos = l, p
+			case 'e':
+				l, p := JumpWordForwardEnd(em.Editor.Buffer, c)
 				c.Line, c.Pos = l, p
 			}
 		}
