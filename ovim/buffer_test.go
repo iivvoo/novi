@@ -161,10 +161,4 @@ func TestRemoveBetweenCursors(t *testing.T) {
 		AssertBufferModified(t, b, true)
 
 	})
-	// check same line
-	// across lines
-	// full lines
-	// cornercase: start at end of line (removes entire next line)
-	// assert returned buffer -> AssertBufferMatch
-	// assert b.Modified?
 }
