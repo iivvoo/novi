@@ -133,8 +133,7 @@ func TestRemoveBetweenCursors(t *testing.T) {
 		res := b.RemoveBetweenCursors(b.NewCursor(1, 10), b.NewCursor(2, 10))
 		AssertBufferMatch(t, b,
 			"Line 0 7890123456789a",
-			"Line 1 789",
-			"123456789c",
+			"Line 1 789123456789c",
 			"Line 3 7890123456789d")
 		AssertBufferMatch(t, res, "0123456789b", "Line 2 7890")
 		AssertBufferModified(t, b, true)
@@ -143,7 +142,7 @@ func TestRemoveBetweenCursors(t *testing.T) {
 	t.Run("Multi line test", func(t *testing.T) {
 		b := makeBuf()
 		res := b.RemoveBetweenCursors(b.NewCursor(0, 10), b.NewCursor(3, 10))
-		AssertBufferMatch(t, b, "Line 0 789", "123456789d")
+		AssertBufferMatch(t, b, "Line 0 789123456789d")
 		AssertBufferMatch(t, res,
 			"0123456789a",
 			"Line 1 7890123456789b",
@@ -156,7 +155,6 @@ func TestRemoveBetweenCursors(t *testing.T) {
 		b := makeBuf()
 		res := b.RemoveBetweenCursors(b.NewCursor(0, 21), b.NewCursor(1, 20))
 		AssertBufferMatch(t, b, "Line 0 7890123456789a",
-			"",
 			"Line 2 7890123456789c",
 			"Line 3 7890123456789d")
 		AssertBufferMatch(t, res, "", "Line 1 7890123456789b")

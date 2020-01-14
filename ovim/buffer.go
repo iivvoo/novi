@@ -222,6 +222,8 @@ func (b *Buffer) RemoveCharacters(c *Cursor, before bool, howmany int) {
 func (b *Buffer) RemoveBetweenCursors(start, end *Cursor) *Buffer {
 	res := &Buffer{}
 
+	// start and end should basically be joined
+
 	if end.Line > start.Line {
 		first := b.Lines[start.Line][start.Pos:].Copy()
 
@@ -237,8 +239,10 @@ func (b *Buffer) RemoveBetweenCursors(start, end *Cursor) *Buffer {
 		res.Lines = append(res.Lines, middle...)
 		res.Lines = append(res.Lines, last)
 
-		b.Lines[start.Line] = b.Lines[start.Line][:start.Pos]
-		b.Lines[end.Line] = b.Lines[end.Line][end.Pos+1:]
+		b.Lines[start.Line] = append(b.Lines[start.Line][:start.Pos], b.Lines[end.Line][end.Pos+1:]...)
+
+		// remove "end" line, since it was joined with start-line
+		b.Lines = append(b.Lines[:end.Line], b.Lines[end.Line+1:]...)
 		// now remove the middle part
 		if middleSize > 0 {
 			b.Lines = append(b.Lines[:start.Line+1], b.Lines[end.Line:]...)
