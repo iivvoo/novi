@@ -69,14 +69,14 @@ func TestRemoveCharacters(t *testing.T) {
 		c := b.NewCursor(0, 0) // cursor on 0
 		b.RemoveCharacters(c, true, 10)
 		AssertBufferMatch(t, b, "0123456789abcdefghijklmnopqrstuvwyz")
-		AssertBufferModified(t, b, true)
+		AssertBufferModified(t, b, false)
 	})
 	t.Run("Test before, empty line", func(t *testing.T) {
 		b := BuildBuffer("")
 		c := b.NewCursor(0, 0) // cursor on 0
 		b.RemoveCharacters(c, true, 10)
 		AssertBufferMatch(t, b, "")
-		AssertBufferModified(t, b, true)
+		AssertBufferModified(t, b, false)
 	})
 	// after cursor (including)
 	t.Run("Test after, full deletion", func(t *testing.T) {
@@ -105,7 +105,7 @@ func TestRemoveCharacters(t *testing.T) {
 		c := b.NewCursor(0, 0) // cursor on 0
 		b.RemoveCharacters(c, false, 10)
 		AssertBufferMatch(t, b, "")
-		AssertBufferModified(t, b, true)
+		AssertBufferModified(t, b, false)
 	})
 }
 

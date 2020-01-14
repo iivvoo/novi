@@ -188,7 +188,24 @@ func (b *Buffer) JoinLineWithPrevious(line int) bool {
  *
  * Could return number of characters actually removed?
  */
-func (b *Buffer) RemoveCharacters(c *Cursor, before bool, howmany int) {
+func (b *Buffer) RemoveCharacters(c *Cursor, before bool, howmany int) *Buffer {
+	// RemoveCharacters implemented through RemoveBetweenCursors
+	if before {
+		startPos := c.Pos - howmany
+		if startPos < 0 {
+			startPos = 0
+		}
+		endPos := b.NewCursor(c.Line, c.Pos-1)
+		return b.RemoveBetweenCursors(b.NewCursor(c.Line, startPos), endPos)
+	}
+	endPos := c.Pos + howmany - 1
+	if endPos >= len(b.Lines[c.Line])-1 {
+		endPos = len(b.Lines[c.Line]) - 1
+	}
+	return b.RemoveBetweenCursors(c, b.NewCursor(c.Line, endPos))
+}
+
+func (b *Buffer) xRemoveCharacters(c *Cursor, before bool, howmany int) {
 	line := b.Lines[c.Line]
 
 	if before {
@@ -221,6 +238,9 @@ func (b *Buffer) RemoveCharacters(c *Cursor, before bool, howmany int) {
 func (b *Buffer) RemoveBetweenCursors(start, end *Cursor) *Buffer {
 	res := &Buffer{}
 
+	if start.Line > end.Line || (start.Line == end.Line && start.Pos > end.Pos) {
+		return res
+	}
 	// We could check if start.IsBefore(end) and only act if true
 	if end.Line > start.Line {
 		first := b.Lines[start.Line][start.Pos:].Copy()
