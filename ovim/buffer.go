@@ -218,25 +218,22 @@ func (b *Buffer) RemoveCharacters(c *Cursor, before bool, howmany int) {
 // RemoveBetweenCursors removes all characters between start/end cursors (inclusive),
 // across (entire) multiple lines if necessary. Returns the removed part as buffer
 // Not suitable for block selections
-// XXX This should join lines if cursors span lines!
 func (b *Buffer) RemoveBetweenCursors(start, end *Cursor) *Buffer {
 	res := &Buffer{}
 
-	// start and end should basically be joined
-
+	// We could check if start.IsBefore(end) and only act if true
 	if end.Line > start.Line {
 		first := b.Lines[start.Line][start.Pos:].Copy()
+		res.Lines = append(res.Lines, first)
 
-		middle := []Line{}
 		middleSize := end.Line - start.Line - 1
 
 		if middleSize > 0 {
-			middle = b.Lines[start.Line+1 : end.Line]
+			middle := b.Lines[start.Line+1 : end.Line]
+			res.Lines = append(res.Lines, middle...)
 		}
-		last := b.Lines[end.Line][:end.Pos+1].Copy()
 
-		res.Lines = append(res.Lines, first)
-		res.Lines = append(res.Lines, middle...)
+		last := b.Lines[end.Line][:end.Pos+1].Copy()
 		res.Lines = append(res.Lines, last)
 
 		b.Lines[start.Line] = append(b.Lines[start.Line][:start.Pos], b.Lines[end.Line][end.Pos+1:]...)
