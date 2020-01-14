@@ -11,7 +11,7 @@ package ovim
 // Line implements a sequence of Runes
 type Line []rune
 
-// GetRunes implements safe slicing with bounday checks
+// GetRunes implements safe slicing with boundary checks
 func (l Line) GetRunes(start, end int) []rune {
 	if start > len(l) {
 		return nil
@@ -22,7 +22,16 @@ func (l Line) GetRunes(start, end int) []rune {
 	if end > len(l) {
 		end = len(l)
 	}
-	return l[start:end]
+	return l[start:end].Copy()
+}
+
+// Copy makes a proper copy of a line. Effectively, Lines are slices and taking
+// (sub)slices of a slice does not make a copy. Modifying the original will copy the
+// subslice which is not what you usually want
+func (l Line) Copy() Line {
+	c := make(Line, len(l))
+	copy(c, l)
+	return c
 }
 
 // Buffer encapsulates the state o an editable line buffer
@@ -203,4 +212,42 @@ func (b *Buffer) RemoveCharacters(c *Cursor, before bool, howmany int) {
 			b.Lines[c.Line] = line
 		}
 	}
+	b.Modified = true
+}
+
+// RemoveBetweenCursors removes all characters between start/end cursors (inclusive),
+// across (entire) multiple lines if necessary. Returns the removed part as buffer
+// Not suitable for block selections
+// XXX This should join lines if cursors span lines!
+func (b *Buffer) RemoveBetweenCursors(start, end *Cursor) *Buffer {
+	res := &Buffer{}
+
+	if end.Line > start.Line {
+		first := b.Lines[start.Line][start.Pos:].Copy()
+
+		middle := []Line{}
+		middleSize := end.Line - start.Line - 1
+
+		if middleSize > 0 {
+			middle = b.Lines[start.Line+1 : end.Line]
+		}
+		last := b.Lines[end.Line][:end.Pos+1].Copy()
+
+		res.Lines = append(res.Lines, first)
+		res.Lines = append(res.Lines, middle...)
+		res.Lines = append(res.Lines, last)
+
+		b.Lines[start.Line] = b.Lines[start.Line][:start.Pos]
+		b.Lines[end.Line] = b.Lines[end.Line][end.Pos+1:]
+		// now remove the middle part
+		if middleSize > 0 {
+			b.Lines = append(b.Lines[:start.Line+1], b.Lines[end.Line:]...)
+		}
+	} else { // removal is on same start/endline.
+		part := b.Lines[start.Line][start.Pos : end.Pos+1].Copy()
+		b.Lines[start.Line] = append(b.Lines[start.Line][:start.Pos], b.Lines[end.Line][end.Pos+1:]...)
+		res.Lines = append(res.Lines, part)
+	}
+	b.Modified = true
+	return res
 }

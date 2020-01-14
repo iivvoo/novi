@@ -33,6 +33,17 @@ func AssertBufferMatch(t *testing.T, b *Buffer, expected ...string) {
 	}
 }
 
+// AssertBufferModified asserts the buffer was modified
+func AssertBufferModified(t *testing.T, b *Buffer, modified bool) {
+	t.Helper()
+
+	if modified && !b.Modified {
+		t.Errorf("Expected buffer to be modified, but it wasn't")
+	} else if !modified && b.Modified {
+		t.Errorf("Expected buffer NOT to be modified, but it actually WAS")
+	}
+}
+
 // BuildBuffer creates a new buffer based on the supplied strings
 func BuildBuffer(lines ...string) *Buffer {
 	b := NewBuffer()
