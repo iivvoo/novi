@@ -199,7 +199,7 @@ func (b *Buffer) RemoveCharacters(c *Cursor, before bool, howmany int) *Buffer {
 		return b.RemoveBetweenCursors(b.NewCursor(c.Line, startPos), endPos)
 	}
 	endPos := c.Pos + howmany - 1
-	if endPos >= len(b.Lines[c.Line])-1 {
+	if endPos > len(b.Lines[c.Line])-1 {
 		endPos = len(b.Lines[c.Line]) - 1
 	}
 	return b.RemoveBetweenCursors(c, b.NewCursor(c.Line, endPos))

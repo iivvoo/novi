@@ -304,15 +304,33 @@ func (em *Vi) HandleAnyRune(ev ovim.Event) bool {
 // ReplaceDeleteWords handles the cw and dw commands
 func (em *Vi) ReplaceDeleteWords(howmany int, change bool) {
 	// difference cw/dw: cursor postion and mode after operation
+	first := em.Editor.Cursors[0]
+
 	if change {
-		// find nth word
-		// find end of prev (alnum) word before
-		// delete until there (multi line)
-		// go to insert mode
+		l, p := -1, -1
+		end := first
+		for i := 0; i < howmany; i++ {
+			l, p = JumpForwardEnd(em.Editor.Buffer, end)
+			end = em.Editor.Buffer.NewCursor(l, p)
+		}
+		em.Editor.Buffer.RemoveBetweenCursors(first, end)
 		em.Mode = ModeEdit
 	} else {
-		// find nth word
-		// delete until there (multi-line)
+		l, p := -1, -1
+		end := first
+		for i := 0; i < howmany; i++ {
+			l, p = JumpForward(em.Editor.Buffer, end)
+			end = em.Editor.Buffer.NewCursor(l, p)
+		}
+		// If we'd remove now we'd also remove the first character
+		// of the word we ended up at
+		if end.Pos > 0 {
+			end.Pos--
+		} else if end.Line > 0 {
+			end.Line--
+			end.Pos = len(em.Editor.Buffer.Lines[end.Line]) - 1
+		}
+		em.Editor.Buffer.RemoveBetweenCursors(first, end)
 	}
 }
 
