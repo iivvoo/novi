@@ -14,12 +14,12 @@ import (
 var log = logger.GetLogger("ovide")
 
 /*
- * Something with
- * - a navtree
- * - one or more buffers / tabs
- * - ?
  *
- * ovim should probably be embedded into a "widget"
+ * Stuff to do:
+ * - display statusbar
+ * - refactor Tab into proper Primitive (agnostic of contents)
+ *   with proper id to identify tab, select existing, buttons.
+ * - refactor editor into proper Primitive: area + status
  */
 
 type Event interface{}
@@ -105,7 +105,7 @@ func NewTabbedLayout() *TabbedLayout {
 	buttonFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
 	flex.AddItem(buttonFlex, 1, 1, false)
 
-	flex.AddItem(tview.NewBox().SetBorder(true).SetTitle("bips"), 0, 0, true)
+	flex.AddItem(tview.NewBox().SetBorder(true), 0, 0, true)
 	return &TabbedLayout{
 		Flex:       flex,
 		buttonFlex: buttonFlex,

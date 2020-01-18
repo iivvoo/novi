@@ -10,25 +10,34 @@ import (
 // implement the OviPrimitive
 type Ovi struct {
 	tview.Primitive
-	Editor    *ovim.Editor
-	Emulation ovim.Emulation
-	ViewportX int
-	ViewportY int
+	Editor     *ovim.Editor
+	Emulation  ovim.Emulation
+	ViewportX  int
+	ViewportY  int
+	editArea   tview.Primitive
+	statusArea *tview.TextView
 }
 
 func NewOviPrimitive(e *ovim.Editor, emu ovim.Emulation, name string) tview.Primitive {
-	x := tview.NewBox().SetBorder(true).SetTitle(name)
-	x.SetBorder(true)
+	x := tview.NewFlex().SetDirection(tview.FlexRow)
+
+	editArea := tview.NewBox()
+	statusArea := tview.NewTextView()
+	x.AddItem(editArea, 0, 1, true)
+	x.AddItem(statusArea, 1, 1, false)
 
 	o := &Ovi{
-		ViewportX: 0,
-		ViewportY: 0,
-		Primitive: x,
-		Editor:    e,
-		Emulation: emu}
+		ViewportX:  0,
+		ViewportY:  0,
+		Primitive:  x,
+		Editor:     e,
+		Emulation:  emu,
+		editArea:   editArea,
+		statusArea: statusArea}
 
-	x.SetDrawFunc(o.TviewRender)
-	x.SetInputCapture(o.HandleInput)
+	editArea.SetDrawFunc(o.TviewRender)
+	editArea.SetInputCapture(o.HandleInput)
+	o.UpdateStatus()
 	return o
 }
 
@@ -82,10 +91,15 @@ func (o *Ovi) TviewRender(screen tcell.Screen, xx, yy, width, height int) (int, 
 	return 0, 0, 0, 0
 }
 
-func (o *Ovi) HandleInput(event *tcell.EventKey) *tcell.EventKey {
+func (o *Ovi) UpdateStatus() {
+	_, _, w, _ := o.statusArea.GetRect()
+	o.statusArea.SetText(o.Emulation.GetStatus(w))
+}
 
+func (o *Ovi) HandleInput(event *tcell.EventKey) *tcell.EventKey {
 	if e := termui.MapTCellKey(event); e != nil {
 		if o.Emulation.HandleEvent(e) {
+			o.UpdateStatus()
 			return nil
 		}
 	}
