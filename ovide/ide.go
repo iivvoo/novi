@@ -174,7 +174,15 @@ func Run() {
 
 		}
 	}()
-	// c <- &OpenFileEvent{Filename: "Kaas"}
+
+	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyCtrlT {
+			app.SetFocus(list)
+		}
+		return event
+	})
+
+	c <- &OpenFileEvent{Filename: "sample.txt"}
 	if err := app.SetRoot(grid, true).Run(); err != nil {
 		panic(err)
 	}
