@@ -2,6 +2,9 @@ package ovide
 
 import "github.com/rivo/tview"
 
+// is it a TabView, TabLayout, ??
+// Flex, Frame and Grid are also just that. "Tabs"?
+
 type Tab struct {
 	Label string
 	Item  tview.Primitive

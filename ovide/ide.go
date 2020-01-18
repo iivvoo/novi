@@ -36,12 +36,15 @@ type TreeEntry struct {
 }
 
 func FileTree(c chan Event) tview.Primitive {
-	root := tview.NewTreeNode("Explorer").
+	// get current path / folder name
+	root := tview.NewTreeNode(".").
 		SetColor(tcell.ColorRed)
 
 	tree := tview.NewTreeView().
 		SetRoot(root).
 		SetCurrentNode(root)
+	tree.SetBorder(true)
+	tree.SetTitle("Explorer")
 
 	add := func(target *tview.TreeNode, path string) {
 		files, err := ioutil.ReadDir(path)
@@ -94,15 +97,12 @@ func Run() {
 
 	app := tview.NewApplication()
 
-	grid := tview.NewGrid()
-	grid.SetRows(1, 0).
-		SetColumns(0, 100).
-		SetBorders(true)
+	grid := tview.NewFlex()
 
 	list := FileTree(c)
 	tabs := NewTabbedLayout()
-	grid.AddItem(list, 1, 0, 1, 1, 0, 0, true)
-	grid.AddItem(tabs, 1, 1, 1, 1, 0, 0, false)
+	grid.AddItem(list, 25, 0, true)
+	grid.AddItem(tabs, 0, 1, false)
 
 	// TODO: Include some sort of "debugging" Box
 	go func() {
