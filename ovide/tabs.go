@@ -53,32 +53,29 @@ func (t *Tabs) updateLabels() {
 func (t *Tabs) AddTab(Id string, Label string, Item tview.Primitive) tview.Primitive {
 	// If a tab with this Id already exists, select it in stead
 	// (but it's better if the caller would do that check)
-	for _, tab := range t.Tabs {
-		if tab.Id == Id {
-			t.SelectTab(Id)
-			return nil
-		}
+	if t.SelectTab(Id) {
+		return nil
 	}
 
 	tab := &Tab{Id: Id, Label: Label, Item: Item}
 	t.Tabs = append(t.Tabs, tab)
+	t.setActive(tab)
+	return Item
+}
 
+func (t *Tabs) setActive(tab *Tab) {
 	if t.Active != nil {
 		t.RemoveItem(t.Active.Item)
 	}
-	t.AddItem(Item, 0, 10, true)
+	t.AddItem(tab.Item, 0, 10, true)
 	t.Active = tab
 	t.updateLabels()
-	return Item
 }
 
 func (t *Tabs) SelectTab(Id string) bool {
 	for _, tab := range t.Tabs {
 		if tab.Id == Id {
-			t.RemoveItem(t.Active.Item)
-			t.AddItem(tab.Item, 0, 10, true)
-			t.Active = tab
-			t.updateLabels()
+			t.setActive(tab)
 			return true
 		}
 	}

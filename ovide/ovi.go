@@ -42,8 +42,6 @@ func NewOviPrimitive(e *ovim.Editor, emu ovim.Emulation, name string) tview.Prim
 }
 
 func (o *Ovi) TviewRender(screen tcell.Screen, xx, yy, width, height int) (int, int, int, int) {
-	log.Println("Drawing Ovi")
-
 	primaryCursor := o.Editor.Cursors[0]
 	if primaryCursor.Pos > o.ViewportX+width-1 {
 		o.ViewportX = primaryCursor.Pos - (width - 1)
