@@ -19,15 +19,6 @@ var log = logger.GetLogger("ovide")
  * - refactor editor into proper Primitive: area + status
  */
 
-type Event interface{}
-
-type QuitEvent struct{}
-
-type OpenFileEvent struct {
-	Filename string
-	FullPath string
-}
-
 // Run just starts everything
 func Run() {
 	c := make(chan Event)
