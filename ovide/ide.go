@@ -28,10 +28,12 @@ type QuitEvent struct{}
 
 type OpenFileEvent struct {
 	Filename string
+	FullPath string
 }
 
 type TreeEntry struct {
 	IsDir    bool
+	FullPath string
 	Filename string
 }
 
@@ -52,7 +54,7 @@ func FileTree(c chan Event) tview.Primitive {
 			panic(err)
 		}
 		for _, file := range files {
-			ref := &TreeEntry{IsDir: file.IsDir(), Filename: filepath.Join(path, file.Name())}
+			ref := &TreeEntry{IsDir: file.IsDir(), FullPath: filepath.Join(path, file.Name()), Filename: file.Name()}
 			node := tview.NewTreeNode(file.Name()).SetReference(ref)
 			if file.IsDir() {
 				node.SetColor(tcell.ColorGreen)
@@ -76,10 +78,10 @@ func FileTree(c chan Event) tview.Primitive {
 			entry := reference.(*TreeEntry)
 
 			if entry.IsDir {
-				add(node, entry.Filename)
+				add(node, entry.FullPath)
 			} else {
 				log.Printf("Opening file %s", entry.Filename)
-				c <- &OpenFileEvent{Filename: entry.Filename}
+				c <- &OpenFileEvent{FullPath: entry.FullPath, Filename: entry.Filename}
 				log.Printf("Command sent, should have been handled")
 			}
 		} else {
@@ -97,12 +99,12 @@ func Run() {
 
 	app := tview.NewApplication()
 
-	grid := tview.NewFlex()
+	layout := tview.NewFlex()
 
 	list := FileTree(c)
-	tabs := NewTabbedLayout()
-	grid.AddItem(list, 25, 0, true)
-	grid.AddItem(tabs, 0, 1, false)
+	tabs := NewTabs()
+	layout.AddItem(list, 25, 0, true)
+	layout.AddItem(tabs, 0, 1, false)
 
 	// TODO: Include some sort of "debugging" Box
 	go func() {
@@ -121,12 +123,12 @@ func Run() {
 				case *OpenFileEvent:
 					log.Printf("Opening tab for %s", e.Filename)
 					editor := ovim.NewEditor()
-					editor.LoadFile(e.Filename)
+					editor.LoadFile(e.FullPath)
 					editor.SetCursor(0, 0)
 
 					emu := viemu.NewVi(editor)
 
-					app.SetFocus(tabs.AddTab(e.Filename, NewOviPrimitive(editor, emu, e.Filename)))
+					app.SetFocus(tabs.AddTab(e.FullPath, e.Filename, NewOviPrimitive(editor, emu, e.Filename)))
 					log.Println("Done opening tab")
 				case *QuitEvent:
 					app.Stop()
@@ -143,8 +145,8 @@ func Run() {
 		return event
 	})
 
-	c <- &OpenFileEvent{Filename: "sample.txt"}
-	if err := app.SetRoot(grid, true).Run(); err != nil {
+	c <- &OpenFileEvent{FullPath: "sample.txt", Filename: "sample.txt"}
+	if err := app.SetRoot(layout, true).Run(); err != nil {
 		panic(err)
 	}
 }
