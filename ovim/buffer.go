@@ -88,6 +88,7 @@ func (b *Buffer) AddLine(line Line) {
  * Does not update cursors
  */
 func (b *Buffer) PutRuneAtCursors(cs Cursors, r rune) {
+	b.Validate()
 	for _, c := range cs {
 		line := b.Lines[c.Line]
 		line = append(line[:c.Pos], append(Line{r}, line[c.Pos:]...)...)
@@ -103,8 +104,8 @@ func (b *Buffer) RemoveRuneBeforeCursor(c *Cursor) {
 		line := b.Lines[c.Line]
 		line = append(line[:c.Pos-1], line[c.Pos:]...)
 		b.Lines[c.Line] = line
+		b.Modified = true
 	}
-	b.Modified = true
 }
 
 /* SplitLine
