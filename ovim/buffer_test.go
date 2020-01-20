@@ -4,6 +4,32 @@ import (
 	"testing"
 )
 
+func TestBuffer(t *testing.T) {
+	t.Run("PutRuneAtCursor on empty buffer", func(t *testing.T) {
+		b := BuildBuffer()
+		c := &Cursor{Line: 0, Pos: 0}
+		b.PutRuneAtCursors(Cursors{c}, '!')
+
+		AssertBufferMatch(t, b, "!")
+		AssertBufferModified(t, b, true)
+	})
+	t.Run("AddLine on empty buffer", func(t *testing.T) {
+		b := BuildBuffer()
+		b.AddLine(Line(""))
+
+		AssertBufferMatch(t, b, "")
+		AssertBufferModified(t, b, true)
+	})
+	t.Run("RemoveRuneBeforeCursor on empty buffer", func(t *testing.T) {
+		b := BuildBuffer()
+		c := &Cursor{Line: 0, Pos: 0}
+		b.RemoveRuneBeforeCursor(c)
+
+		AssertBufferModified(t, b, false)
+	})
+	// Should we test other corner cases? Line removing characters on invalid cursors
+	// or empty buffers?
+}
 func TestInsertLine(t *testing.T) {
 	// empty buffer, before, after, top, bottom, middle
 	t.Run("Test empty buffer, before", func(t *testing.T) {
