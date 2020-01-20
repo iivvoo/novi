@@ -159,6 +159,5 @@ func TestRemoveBetweenCursors(t *testing.T) {
 			"Line 3 7890123456789d")
 		AssertBufferMatch(t, res, "", "Line 1 7890123456789b")
 		AssertBufferModified(t, b, true)
-
 	})
 }
