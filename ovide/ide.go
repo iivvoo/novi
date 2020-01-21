@@ -35,7 +35,11 @@ func Run() {
 	cols := tview.NewFlex().SetDirection(tview.FlexColumn)
 	layout.AddItem(cols, 0, 1, true)
 
-	nav := NewNavTree(c)
+	cwd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	nav := NewNavTree(c, cwd)
 	tabs := NewTabs()
 	cols.AddItem(nav, 25, 0, true)
 	cols.AddItem(tabs, 0, 1, false)
@@ -82,11 +86,12 @@ func Run() {
 							emu := viemu.NewVi(editor)
 
 							app.SetFocus(tabs.AddTab(p, s, NewOviPrimitive(editor, emu, s)))
-							nav.RefreshTemp()
+							nav.ClearPlaceHolder()
+							nav.SelectPath(p)
 							// Select added file
 						}).
 						SetCancel(func(s string) {
-							nav.RefreshTemp()
+							nav.ClearPlaceHolder()
 						})
 
 				case *DebugEvent:
