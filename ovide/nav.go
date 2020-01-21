@@ -18,10 +18,10 @@ type NavTreeEntry struct {
 
 type NavTree struct {
 	*tview.TreeView
-	c       chan Event
-	current *NavTreeEntry
-	temp    *tview.TreeNode
-	m       map[string]*NavTreeEntry
+	c          chan Event
+	current    *NavTreeEntry
+	workFolder *NavTreeEntry
+	m          map[string]*NavTreeEntry
 }
 
 func NewNavTree(c chan Event, path string) *NavTree {
@@ -65,28 +65,25 @@ func (t *NavTree) changeHandler(node *tview.TreeNode) {
 func (t *NavTree) inputHandler(event *tcell.EventKey) *tcell.EventKey {
 	switch event.Rune() {
 	case 'n':
-		// Get the current selection
-		// Get the parent folder
-		current := t.current
-		p := current.FullPath
-		pNode := current.node
-		log.Printf("About to create a new node on %s", p)
-		if !current.IsDir {
-			p = filepath.Dir(current.FullPath)
-			pNode = t.m[p].node
+		// work will point to the folder that will hold the new file
+		work := t.current
+		log.Printf("About to create a new node on %s", work.FullPath)
+		if !work.IsDir {
+			p := filepath.Dir(work.FullPath)
+			work = t.m[p] // XXX assert exists
 			log.Printf("Not a folder, getting parent -> %s", p)
 		} else {
 			// This is supposed to open the folder
-			t.selectHandler(pNode)
-			pNode.SetExpanded(true)
+			t.add(work.node, work.FullPath)
+			work.node.SetExpanded(true)
 		}
 		// add fake entry
 		tmp := tview.NewTreeNode("-> ____")
-		pNode.AddChild(tmp)
-
-		t.c <- &NewFileEvent{ParentFolder: p}
+		work.node.AddChild(tmp)
 		t.SetCurrentNode(tmp)
-		t.temp = pNode
+		t.workFolder = work
+
+		t.c <- &NewFileEvent{ParentFolder: work.FullPath}
 		return nil
 
 	case 'f':
@@ -96,10 +93,10 @@ func (t *NavTree) inputHandler(event *tcell.EventKey) *tcell.EventKey {
 }
 
 func (t *NavTree) ClearPlaceHolder() {
-	t.temp.ClearChildren()
-	// a bit of a hack to abuse the handler here.
-	t.selectHandler(t.temp)
-	t.temp = nil
+	// Clear folder and re-add children
+	t.workFolder.node.ClearChildren()
+	t.add(t.workFolder.node, t.workFolder.FullPath)
+	t.workFolder = nil
 }
 
 func (t *NavTree) SelectPath(p string) {
