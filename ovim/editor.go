@@ -34,7 +34,7 @@ type Editor struct {
 }
 
 func NewEditor() *Editor {
-	e := &Editor{Buffer: NewBuffer()}
+	e := &Editor{Buffer: NewEmptyBuffer()}
 	e.Cursors = append(e.Cursors, e.Buffer.NewCursor(-1, 0))
 	return e
 }
@@ -50,12 +50,7 @@ func (e *Editor) LoadFile(name string) {
 	if err != nil {
 		panic(err)
 	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		e.Buffer.AddLine(Line(scanner.Text()))
-	}
+	e.Buffer = BufferFromFile(file)
 	e.filename = name
 	e.Buffer.Modified = false
 }

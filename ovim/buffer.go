@@ -1,11 +1,36 @@
 package ovim
 
+import (
+	"bufio"
+	"io"
+)
+
 /*
  * Buffer contains the implementaion of the text being manipulated by the editor.
  * It consists of an array of variable length strings of runes that can be manpipulated
  * using one or more cursors which identify one or more positions within the buffer
  */
 
+/*
+  A buffer by default is empty, it has 0 lines. But cursors will point to (0,0) since they
+  can't point anywhere else. Getting the line length at that point will crash
+
+  we can also make sure a buffer always has one empty line
+  perhaps add a flag? "start empty"?
+
+  This way we can get rid of validate()?
+
+  Either you start with an empty buffer, or you load data in the buffer. That's how you start.
+  Empty buffer means start with single empty line, else load data UNLESS it's 0 bytes
+
+  if you remove lines and you remove the last lines, replace it with an empty line
+
+  Don't allow buffers to be created directly, always require it to be created and initialized
+  - empty
+  - from file
+  - from lines
+
+*/
 // https://github.com/golang/go/wiki/SliceTricks
 
 // Line implements a sequence of Runes
@@ -36,13 +61,39 @@ func (l Line) Copy() Line {
 
 // Buffer encapsulates the state o an editable line buffer
 type Buffer struct {
-	Lines    []Line
-	Modified bool
+	Lines       []Line
+	Modified    bool
+	initialized bool
 }
 
-// NewBuffer creates a new Buffer
+// NewBuffer creates a new Buffer. You usually don't want to call this directly
+// since it will give you an unitialized buffer that you can't work with yet.
 func NewBuffer() *Buffer {
+	// the call you don't want since it doesn't initialize
 	return &Buffer{}
+}
+
+func NewEmptyBuffer() *Buffer {
+	return &Buffer{Lines: []Line{Line{}}, initialized: true}
+}
+
+func BufferFromFile(in io.Reader) *Buffer {
+	b := NewBuffer()
+	scanner := bufio.NewScanner(in)
+	for scanner.Scan() {
+		b.AddLine(Line(scanner.Text()))
+	}
+	b.initialized = true
+	return b
+}
+
+func BufferFromStrings(lines []string) *Buffer {
+	b := NewBuffer()
+	for _, l := range lines {
+		b.Lines = append(b.Lines, []rune(l))
+	}
+	b.initialized = true
+	return b
 }
 
 // NewCursor creates and binds a new cursor on this buffer

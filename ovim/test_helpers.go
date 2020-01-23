@@ -46,10 +46,5 @@ func AssertBufferModified(t *testing.T, b *Buffer, modified bool) {
 
 // BuildBuffer creates a new buffer based on the supplied strings
 func BuildBuffer(lines ...string) *Buffer {
-	b := NewBuffer()
-	for _, l := range lines {
-		b.Lines = append(b.Lines, []rune(l))
-	}
-
-	return b
+	return BufferFromStrings(lines)
 }
