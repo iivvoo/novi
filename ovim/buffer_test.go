@@ -17,7 +17,7 @@ func TestBuffer(t *testing.T) {
 		b := BuildBuffer()
 		b.AddLine(Line(""))
 
-		AssertBufferMatch(t, b, "")
+		AssertBufferMatch(t, b, "", "")
 		AssertBufferModified(t, b, true)
 	})
 	t.Run("RemoveRuneBeforeCursor on empty buffer", func(t *testing.T) {
@@ -32,24 +32,14 @@ func TestBuffer(t *testing.T) {
 }
 func TestInsertLine(t *testing.T) {
 	// empty buffer, before, after, top, bottom, middle
-	t.Run("Test empty buffer, before", func(t *testing.T) {
+	t.Run("Test empty buffer", func(t *testing.T) {
 		b := BuildBuffer()
 		c := &Cursor{Line: 0, Pos: 0}
-		if res := b.InsertLine(c, "before", false); !res {
+		if res := b.InsertLine(c, "empty", false); !res {
 			t.Error("Expected InsertLine to succeed but it didn't")
 		}
 
-		AssertBufferMatch(t, b, "before")
-		AssertBufferModified(t, b, true)
-	})
-	t.Run("Test empty buffer, after", func(t *testing.T) {
-		b := BuildBuffer()
-		c := &Cursor{Line: 0, Pos: 0}
-		if res := b.InsertLine(c, "after", false); !res {
-			t.Error("Expected InsertLine to succeed but it didn't")
-		}
-
-		AssertBufferMatch(t, b, "after")
+		AssertBufferMatch(t, b, "", "empty")
 		AssertBufferModified(t, b, true)
 	})
 	t.Run("Test single line buffer, before", func(t *testing.T) {
