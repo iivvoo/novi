@@ -83,6 +83,7 @@ func BufferFromFile(in io.Reader) *Buffer {
 	for scanner.Scan() {
 		b.AddLine(Line(scanner.Text()))
 	}
+	b.Validate()
 	b.initialized = true
 	return b
 }
@@ -92,6 +93,7 @@ func BufferFromStrings(lines []string) *Buffer {
 	for _, l := range lines {
 		b.Lines = append(b.Lines, []rune(l))
 	}
+	b.Validate()
 	b.initialized = true
 	return b
 }
