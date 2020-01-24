@@ -80,6 +80,7 @@ func (b *Buffer) InitializeEmptyBuffer() *Buffer {
 }
 
 func (b *Buffer) LoadFile(in io.Reader) *Buffer {
+	b.Lines = nil
 	scanner := bufio.NewScanner(in)
 	for scanner.Scan() {
 		b.AddLine(Line(scanner.Text()))
@@ -90,6 +91,7 @@ func (b *Buffer) LoadFile(in io.Reader) *Buffer {
 }
 
 func (b *Buffer) LoadStrings(lines []string) *Buffer {
+	b.Lines = nil
 	for _, l := range lines {
 		b.Lines = append(b.Lines, []rune(l))
 	}

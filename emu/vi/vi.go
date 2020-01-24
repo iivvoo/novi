@@ -143,8 +143,8 @@ func NewVi(e *ovim.Editor) *Vi {
 // HandleCommandEnter handles enter in command mode
 func (em *Vi) HandleCommandEnter(ev ovim.Event) bool {
 	for _, c := range em.Editor.Cursors {
-		Move(c, ovim.CursorDown)
-		Move(c, ovim.CursorBegin)
+		em.Move(c, ovim.CursorDown)
+		em.Move(c, ovim.CursorBegin)
 	}
 	return true
 }
@@ -154,8 +154,8 @@ func (em *Vi) HandleEditEnter(ev ovim.Event) bool {
 	// XXX identical to "basic" emulation
 	for _, c := range em.Editor.Cursors {
 		em.Editor.Buffer.SplitLine(c)
-		Move(c, ovim.CursorDown)
-		Move(c, ovim.CursorBegin)
+		em.Move(c, ovim.CursorDown)
+		em.Move(c, ovim.CursorBegin)
 		// update all cursors after
 		for _, ca := range em.Editor.Cursors.After(c) {
 			ca.Line++
@@ -171,28 +171,28 @@ func (em *Vi) HandleBackspace(ev ovim.Event) bool {
 	if em.Mode == ModeCommand {
 		for _, c := range em.Editor.Cursors {
 			if c.Pos == 0 && c.Line != 0 {
-				Move(c, ovim.CursorUp)
-				Move(c, ovim.CursorEnd)
+				em.Move(c, ovim.CursorUp)
+				em.Move(c, ovim.CursorEnd)
 			} else {
-				Move(c, ovim.CursorLeft)
+				em.Move(c, ovim.CursorLeft)
 			}
 		}
 	} else {
 		for _, c := range em.Editor.Cursors {
 			if c.Pos > 0 {
 				em.Editor.Buffer.RemoveRuneBeforeCursor(c)
-				Move(c, ovim.CursorLeft)
+				em.Move(c, ovim.CursorLeft)
 			} else {
 				// identical to basic emulation XXX
 				l := c.Line
-				Move(c, ovim.CursorUp)
-				Move(c, ovim.CursorEnd)
+				em.Move(c, ovim.CursorUp)
+				em.Move(c, ovim.CursorEnd)
 				em.Editor.Buffer.JoinLineWithPrevious(l)
 				// except here, since "End" in vi moves to the last character, not past it, for which we need to compensate
-				Move(c, ovim.CursorRight)
+				em.Move(c, ovim.CursorRight)
 
 				for _, cc := range em.Editor.Cursors.After(c) {
-					Move(cc, ovim.CursorUp)
+					em.Move(cc, ovim.CursorUp)
 				}
 			}
 		}
@@ -211,7 +211,7 @@ func (em *Vi) RemoveCharacters(howmany int, before bool) {
 	for _, c := range em.Editor.Cursors {
 		em.Editor.Buffer.RemoveCharacters(c, before, howmany)
 		if before {
-			MoveMany(c, ovim.CursorLeft, howmany)
+			em.MoveMany(c, ovim.CursorLeft, howmany)
 		}
 	}
 }
@@ -223,7 +223,7 @@ func (em *Vi) RemoveLines(howmany int) {
 	for i := 0; i < howmany; i++ {
 		if !em.Editor.Buffer.RemoveLine(first.Line) {
 			// We ran out of lines, no need to continue, but do move up
-			Move(first, ovim.CursorUp)
+			em.Move(first, ovim.CursorUp)
 			break
 		}
 	}
@@ -237,8 +237,8 @@ func (em *Vi) JumpStartEndLine(howmany int, jumpstart bool) {
 			// howmany has no meaning
 			c.Pos = 0
 		} else {
-			MoveMany(c, ovim.CursorDown, howmany-1)
-			Move(c, ovim.CursorEnd)
+			em.MoveMany(c, ovim.CursorDown, howmany-1)
+			em.Move(c, ovim.CursorEnd)
 		}
 	}
 }
@@ -265,20 +265,20 @@ func (em *Vi) HandleInsertionKeys(ev ovim.Event) bool {
 	case 'i': // just insert at current cursor position
 		break
 	case 'I': // insert at beginning of line
-		Move(first, ovim.CursorBegin)
+		em.Move(first, ovim.CursorBegin)
 	case 'o': // add line below current line
 		// XXX TODO preserve indent (depend on indent mode?)
 		em.Editor.Buffer.InsertLine(first, "", false)
-		Move(first, ovim.CursorDown)
+		em.Move(first, ovim.CursorDown)
 	case 'O': // add line above cursor
 		// XXX TODO preserve indent (depend on indent mode?)
 		em.Editor.Buffer.InsertLine(first, "", true)
 		// The cursor will already be at the inserted line, but may need to move to the start
-		Move(first, ovim.CursorBegin)
+		em.Move(first, ovim.CursorBegin)
 	case 'a': // after cursor
-		Move(first, ovim.CursorRight)
+		em.Move(first, ovim.CursorRight)
 	case 'A': // at end
-		Move(first, ovim.CursorEnd)
+		em.Move(first, ovim.CursorEnd)
 		first.Pos++
 	}
 	return true
@@ -435,7 +435,7 @@ func (em *Vi) JumpTopBottom(howmany int, jumptop bool) {
 		if howmany > 1 {
 			c.Line = 0
 			c.Pos = 0
-			MoveMany(c, ovim.CursorDown, howmany-1)
+			em.MoveMany(c, ovim.CursorDown, howmany-1)
 		} else if jumptop {
 			// this will move all cursors to (0,0) -- remove them?
 			c.Line = 0

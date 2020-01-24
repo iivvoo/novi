@@ -5,7 +5,17 @@ import (
 )
 
 // Move moves the cursor the way Vi would do it
-func Move(c *ovim.Cursor, movement ovim.CursorDirection) {
+// if pastEnd is true we allow the cursor to be placed past the last character,
+// which Vi does in edit mode
+func (em *Vi) Move(c *ovim.Cursor, movement ovim.CursorDirection) {
+	maxPos := func(l ovim.Line) int {
+		limit := len(c.Buffer.Lines[c.Line])
+		if em.Mode == ModeCommand {
+			return limit
+		}
+		return limit + 1
+	}
+
 	switch movement {
 	case ovim.CursorUp:
 		if c.Line > 0 {
@@ -21,7 +31,7 @@ func Move(c *ovim.Cursor, movement ovim.CursorDirection) {
 			c.Pos--
 		}
 	case ovim.CursorRight:
-		if c.Pos < len(c.Buffer.Lines[c.Line])-1 {
+		if c.Pos < maxPos(c.Buffer.Lines[c.Line]) {
 			c.Pos++
 		}
 	case ovim.CursorBegin:
@@ -32,7 +42,7 @@ func Move(c *ovim.Cursor, movement ovim.CursorDirection) {
 			c.Pos = 0
 		}
 	}
-	if l := len(c.Buffer.Lines[c.Line]); c.Pos >= l {
+	if l := maxPos(c.Buffer.Lines[c.Line]); c.Pos >= l {
 		c.Pos = l - 1
 	}
 	if c.Pos < 0 {
@@ -41,9 +51,9 @@ func Move(c *ovim.Cursor, movement ovim.CursorDirection) {
 }
 
 // MoveMany moves the cursor more than one position, if possible
-func MoveMany(c *ovim.Cursor, movement ovim.CursorDirection, count int) {
+func (em *Vi) MoveMany(c *ovim.Cursor, movement ovim.CursorDirection, count int) {
 	for i := 0; i < count; i++ {
-		Move(c, movement)
+		em.Move(c, movement)
 	}
 }
 
@@ -57,7 +67,7 @@ func (em *Vi) MoveCursorRune(r rune, count int) bool {
 	}
 	for _, c := range em.Editor.Cursors {
 		for i := 0; i < count; i++ {
-			Move(c, m[r])
+			em.Move(c, m[r])
 		}
 	}
 	return true
@@ -66,7 +76,7 @@ func (em *Vi) MoveCursorRune(r rune, count int) bool {
 // HandleMoveCursors moves the cursors based on the given event
 func (em *Vi) HandleMoveCursors(ev ovim.Event) bool {
 	for _, c := range em.Editor.Cursors {
-		Move(c, ovim.CursorMap[ev.(ovim.KeyEvent).Key])
+		em.Move(c, ovim.CursorMap[ev.(ovim.KeyEvent).Key])
 	}
 	return true
 }

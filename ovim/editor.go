@@ -35,7 +35,6 @@ type Editor struct {
 
 func NewEditor() *Editor {
 	e := &Editor{Buffer: NewBuffer().InitializeEmptyBuffer()}
-	log.Printf("Creating cursor on buffer %p", e.Buffer)
 	e.Cursors = append(e.Cursors, e.Buffer.NewCursor(-1, 0))
 	return e
 }
