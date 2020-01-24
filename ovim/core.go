@@ -26,6 +26,8 @@ func NewCore(e *Editor, ui UI, em Emulation) *Core {
 func (c *Core) Loop() {
 	eventChan := make(chan Event)
 
+	inputMode := false
+
 	c.UI.Render()
 	c.UI.Loop(eventChan)
 	for {
@@ -36,8 +38,12 @@ func (c *Core) Loop() {
 		ev := <-eventChan
 		// Filter event on what emulation subscribes to
 		// invoke plugins/extensions in some order
-		if !c.Emulation.HandleEvent(ev) {
-			break
+		if inputMode {
+			// handle key until enter/escape
+		} else {
+			if !c.Emulation.HandleEvent(ev) {
+				break
+			}
 		}
 	}
 }

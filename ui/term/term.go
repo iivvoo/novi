@@ -23,7 +23,9 @@ type TermUI struct {
 	Width          int
 	Height         int
 
-	Status string
+	Status    string
+	input     string
+	inputMode bool
 }
 
 func NewTermUI(Editor *ovim.Editor) *TermUI {
@@ -43,7 +45,7 @@ func NewTermUI(Editor *ovim.Editor) *TermUI {
 
 	w, h := s.Size()
 	// adjust for statusbars and box, to be fixed XXX
-	tui := &TermUI{s, Editor, 0, 0, w - 1, h - 3, w, h, ""}
+	tui := &TermUI{s, Editor, 0, 0, w - 1, h - 3, w, h, "", "", false}
 	return tui
 }
 
@@ -79,7 +81,22 @@ func (t *TermUI) Loop(c chan ovim.Event) {
 			switch ev := ev.(type) {
 			case *tcell.EventKey:
 				if k := MapTCellKey(ev); k != nil {
-					c <- k
+					if t.inputMode {
+						// if enter or escape, handle it
+						if kk, ok := k.(*ovim.CharacterEvent); ok {
+							t.input += string(kk.Rune)
+						} else if kk, ok := k.(*ovim.KeyEvent); ok {
+							if kk.Key == ovim.KeyEscape {
+								t.inputMode = false
+								t.input = ""
+							} else if kk.Key == ovim.KeyEnter {
+								t.inputMode = false
+								t.input = ""
+							}
+						}
+					} else {
+						c <- k
+					}
 				}
 			case *tcell.EventResize:
 			}
@@ -90,6 +107,10 @@ func (t *TermUI) Loop(c chan ovim.Event) {
 
 func (t *TermUI) SetStatus(status string) {
 	t.Status = status
+}
+
+func (t *TermUI) EnableInput() {
+	t.SetStatus("> ")
 }
 
 func (t *TermUI) DrawBox() {
