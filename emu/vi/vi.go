@@ -287,6 +287,12 @@ func (em *Vi) HandleInsertionKeys(ev ovim.Event) bool {
 // HandleToModeCommand simply switches (back) to command mode
 func (em *Vi) HandleToModeCommand(ovim.Event) bool {
 	em.Mode = ModeCommand
+	// Make sure no cursors are past the end
+	for _, c := range em.Editor.Cursors {
+		if l := len(em.Editor.Buffer.Lines[c.Line]) - 1; c.Pos > l {
+			c.Pos = l
+		}
+	}
 	return true
 }
 

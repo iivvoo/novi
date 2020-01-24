@@ -41,4 +41,10 @@ func TestVi(t *testing.T) {
 
 		ovim.AssertCursor(t, cursor, 0, 5) // Should move past end
 	})
+	t.Run("Going to command mode when cursor past end will adjust cursor", func(t *testing.T) {
+		vi, cursor := SetupViAndCursor(ModeEdit, 0, 5, "hello")
+		vi.HandleToModeCommand(ovim.KeyEvent{Key: ovim.KeyEscape})
+
+		ovim.AssertCursor(t, cursor, 0, 4) // Should now be on last char
+	})
 }
