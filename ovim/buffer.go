@@ -38,6 +38,7 @@ type Line []rune
 
 // GetRunes implements safe slicing with boundary checks
 func (l Line) GetRunes(start, end int) []rune {
+	log.Printf("GetRunes(%d %d)", start, end)
 	if start > len(l) {
 		return nil
 	}

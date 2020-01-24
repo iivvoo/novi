@@ -289,7 +289,7 @@ func (em *Vi) HandleToModeCommand(ovim.Event) bool {
 	em.Mode = ModeCommand
 	// Make sure no cursors are past the end
 	for _, c := range em.Editor.Cursors {
-		if l := len(em.Editor.Buffer.Lines[c.Line]) - 1; c.Pos > l {
+		if l := len(em.Editor.Buffer.Lines[c.Line]) - 1; l >= 0 && c.Pos > l {
 			c.Pos = l
 		}
 	}

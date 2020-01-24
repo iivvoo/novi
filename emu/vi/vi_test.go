@@ -47,4 +47,10 @@ func TestVi(t *testing.T) {
 
 		ovim.AssertCursor(t, cursor, 0, 4) // Should now be on last char
 	})
+	t.Run("Going to command mode on empty line", func(t *testing.T) {
+		vi, cursor := SetupViAndCursor(ModeEdit, 0, 0, "")
+		vi.HandleToModeCommand(ovim.KeyEvent{Key: ovim.KeyEscape})
+
+		ovim.AssertCursor(t, cursor, 0, 0) // Can't get any smaller
+	})
 }
