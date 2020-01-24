@@ -34,7 +34,8 @@ type Editor struct {
 }
 
 func NewEditor() *Editor {
-	e := &Editor{Buffer: NewEmptyBuffer()}
+	e := &Editor{Buffer: NewBuffer().InitializeEmptyBuffer()}
+	log.Printf("Creating cursor on buffer %p", e.Buffer)
 	e.Cursors = append(e.Cursors, e.Buffer.NewCursor(-1, 0))
 	return e
 }
@@ -50,7 +51,8 @@ func (e *Editor) LoadFile(name string) {
 	if err != nil {
 		panic(err)
 	}
-	e.Buffer = BufferFromFile(file)
+
+	e.Buffer.LoadFile(file)
 	e.filename = name
 	e.Buffer.Modified = false
 }

@@ -7,7 +7,7 @@ import (
 func TestBuffer(t *testing.T) {
 	t.Run("PutRuneAtCursor on empty buffer", func(t *testing.T) {
 		b := BuildBuffer()
-		c := &Cursor{Line: 0, Pos: 0}
+		c := b.NewCursor(0, 0)
 		b.PutRuneAtCursors(Cursors{c}, '!')
 
 		AssertBufferMatch(t, b, "!")
@@ -29,6 +29,23 @@ func TestBuffer(t *testing.T) {
 	})
 	// Should we test other corner cases? Line removing characters on invalid cursors
 	// or empty buffers?
+}
+
+func TestSplitLine(t *testing.T) {
+	t.Run("Test slice issue", func(t *testing.T) {
+		b := BuildBuffer("x")
+		c := b.NewCursor(0, 0)
+		b.SplitLine(c)
+
+		// put another x on the empty line
+		b.PutRuneAtCursors(Cursors{c}, 'x')
+		c.Line, c.Pos = 1, 0
+
+		b.PutRuneAtCursors(Cursors{c}, 'y')
+
+		AssertBufferMatch(t, b, "x", "yx")
+		AssertBufferModified(t, b, true)
+	})
 }
 func TestInsertLine(t *testing.T) {
 	// empty buffer, before, after, top, bottom, middle

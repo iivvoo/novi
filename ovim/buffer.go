@@ -61,7 +61,7 @@ func (l Line) Copy() Line {
 
 // Buffer encapsulates the state o an editable line buffer
 type Buffer struct {
-	Lines       []Line
+	Lines       []Line // Making Lines public is risky, shoud consider making it unexported
 	Modified    bool
 	initialized bool
 }
@@ -73,12 +73,13 @@ func NewBuffer() *Buffer {
 	return &Buffer{}
 }
 
-func NewEmptyBuffer() *Buffer {
-	return &Buffer{Lines: []Line{Line{}}, initialized: true}
+func (b *Buffer) InitializeEmptyBuffer() *Buffer {
+	b.Lines = []Line{Line{}}
+	b.initialized = true
+	return b
 }
 
-func BufferFromFile(in io.Reader) *Buffer {
-	b := NewBuffer()
+func (b *Buffer) LoadFile(in io.Reader) *Buffer {
 	scanner := bufio.NewScanner(in)
 	for scanner.Scan() {
 		b.AddLine(Line(scanner.Text()))
@@ -88,8 +89,7 @@ func BufferFromFile(in io.Reader) *Buffer {
 	return b
 }
 
-func BufferFromStrings(lines []string) *Buffer {
-	b := NewBuffer()
+func (b *Buffer) LoadStrings(lines []string) *Buffer {
 	for _, l := range lines {
 		b.Lines = append(b.Lines, []rune(l))
 	}
@@ -137,6 +137,13 @@ func (b *Buffer) AddLine(line Line) {
 	b.Modified = true
 }
 
+func (b *Buffer) DumpLog(header string) {
+	log.Println(header)
+	for i, l := range b.Lines {
+		log.Printf(" %d [%s]", i, string(l))
+	}
+}
+
 /* PutRuneAtCursor
  * Does not update cursors
  */
@@ -166,14 +173,12 @@ func (b *Buffer) RemoveRuneBeforeCursor(c *Cursor) {
  * Split lines at position of cursors.
  * This is tricky since it will create extra lines, which may affect cursors below
  *
- * XXX make this a single cursor op since this makes it very hard to update cursors
- *
  * If we return some generic modification detail, we may be able to automatically update
  * cursors?
  */
 func (b *Buffer) SplitLine(c *Cursor) {
 	line := b.Lines[c.Line]
-	before, after := line[c.Pos:], line[:c.Pos]
+	before, after := line[c.Pos:].Copy(), line[:c.Pos].Copy()
 	b.Lines = append(b.Lines[:c.Line],
 		append([]Line{after, before}, b.Lines[c.Line+1:]...)...)
 	b.Modified = true
@@ -186,6 +191,7 @@ func (b *Buffer) SplitLine(c *Cursor) {
 func (b *Buffer) InsertLine(c *Cursor, line string, before bool) bool {
 	// On an empty buffer, just add the line
 	if b.Length() == 0 {
+		// XXX obsolete?
 		b.AddLine([]rune(line))
 		b.Modified = true
 		return true
@@ -197,6 +203,9 @@ func (b *Buffer) InsertLine(c *Cursor, line string, before bool) bool {
 	if !before {
 		pos++
 	}
+	// append() may copy if necessary. It will be copying slices in stead of
+	// arrays so it's not too inefficient, but a more efficient Buffer datastructure
+	// should be possible.
 	b.Lines = append(b.Lines[:pos],
 		append([]Line{[]rune(line)}, b.Lines[pos:]...)...)
 	b.Modified = true

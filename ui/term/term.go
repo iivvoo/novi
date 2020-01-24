@@ -73,9 +73,9 @@ func (t *TermUI) Loop(c chan ovim.Event) {
 		for {
 			ev := t.Screen.PollEvent()
 
-			if ev != nil {
-				log.Printf("%+v", ev)
-			}
+			// if ev != nil {
+			// 	log.Printf("%+v", ev)
+			// }
 			switch ev := ev.(type) {
 			case *tcell.EventKey:
 				if k := MapTCellKey(ev); k != nil {

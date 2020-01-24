@@ -46,5 +46,5 @@ func AssertBufferModified(t *testing.T, b *Buffer, modified bool) {
 
 // BuildBuffer creates a new buffer based on the supplied strings
 func BuildBuffer(lines ...string) *Buffer {
-	return BufferFromStrings(lines)
+	return NewBuffer().LoadStrings(lines)
 }
