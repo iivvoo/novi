@@ -67,6 +67,11 @@ func (t *TermUI) Finish() {
 	t.Screen.Fini()
 }
 
+func (t *TermUI) AskInput(prompt string) {
+	t.inputMode = true
+	t.input = ""
+	t.Status = prompt
+}
 func (t *TermUI) Loop(c chan ovim.Event) {
 	go func() {
 		defer ovim.RecoverFromPanic(func() {
@@ -84,16 +89,22 @@ func (t *TermUI) Loop(c chan ovim.Event) {
 					if t.inputMode {
 						// if enter or escape, handle it
 						if kk, ok := k.(*ovim.CharacterEvent); ok {
+							// somehow forward to emulation?
+							// editing doesn't have to be fancy, but cancelling
+							// if backspace beyond start is vi-specific
 							t.input += string(kk.Rune)
 						} else if kk, ok := k.(*ovim.KeyEvent); ok {
 							if kk.Key == ovim.KeyEscape {
 								t.inputMode = false
+								log.Printf("Input cancel [%s]", t.input)
 								t.input = ""
 							} else if kk.Key == ovim.KeyEnter {
 								t.inputMode = false
+								log.Printf("Input accept [%s]", t.input)
 								t.input = ""
 							}
 						}
+						t.Render() // since core will not call us
 					} else {
 						c <- k
 					}
@@ -106,11 +117,9 @@ func (t *TermUI) Loop(c chan ovim.Event) {
 }
 
 func (t *TermUI) SetStatus(status string) {
-	t.Status = status
-}
-
-func (t *TermUI) EnableInput() {
-	t.SetStatus("> ")
+	if !t.inputMode {
+		t.Status = status
+	}
 }
 
 func (t *TermUI) DrawBox() {
@@ -125,14 +134,19 @@ func (t *TermUI) DrawBox() {
 
 func (t *TermUI) DrawStatusbar() {
 	x := 0
-	for _, r := range t.Status { // XXX May overflow
+
+	line := t.Status
+
+	if t.inputMode {
+		line += t.input
+	}
+	for _, r := range line { // XXX May overflow
 		t.Screen.SetContent(x, t.Height-1, r, nil, tcell.StyleDefault)
 		x++
 	}
 	for x < t.EditAreaWidth {
 		t.Screen.SetContent(x, t.Height-1, ' ', nil, tcell.StyleDefault)
 		x++
-
 	}
 }
 

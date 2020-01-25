@@ -76,3 +76,11 @@ func (e CharacterEvent) Equals(other Event) bool {
 	}
 	return false
 }
+
+type AskInputEvent struct {
+	Prompt string
+}
+
+func (e AskInputEvent) Equals(other Event) bool {
+	return false
+}

@@ -79,6 +79,7 @@ type Vi struct {
 	Counter       int
 
 	dispatch []Dispatch
+	c        chan ovim.Event
 }
 
 /*
@@ -107,6 +108,7 @@ type Vi struct {
 func NewVi(e *ovim.Editor) *Vi {
 	em := &Vi{Editor: e, Mode: ModeCommand}
 	dispatch := []Dispatch{
+		Dispatch{Mode: ModeCommand, Event: ovim.CharacterEvent{Rune: ':'}, Handler: em.HandleExCommand},
 		Dispatch{Mode: ModeEdit, Event: ovim.KeyEvent{Key: ovim.KeyEscape}, Handler: em.HandleToModeCommand},
 		Dispatch{Mode: ModeCommand, Event: ovim.KeyEvent{Key: ovim.KeyEscape}, Handler: em.HandleCommandClear},
 		Dispatch{Mode: ModeCommand, Event: ovim.KeyEvent{Key: ovim.KeyEnter}, Handler: em.HandleCommandEnter},
@@ -138,6 +140,16 @@ func NewVi(e *ovim.Editor) *Vi {
 	}
 	em.dispatch = dispatch
 	return em
+}
+
+func (em *Vi) SetChan(c chan ovim.Event) {
+	em.c = c
+}
+
+// HandleExCommand handles the ':' ex command input
+func (em *Vi) HandleExCommand(ev ovim.Event) bool {
+	em.c <- &ovim.AskInputEvent{Prompt: ":"}
+	return true
 }
 
 // HandleCommandEnter handles enter in command mode

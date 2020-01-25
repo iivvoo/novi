@@ -34,6 +34,9 @@ func NewBasic(e *ovim.Editor) *Basic {
 	return &Basic{Editor: e}
 }
 
+// SetChan passes us a channel to communicate with the core.
+func (em *Basic) SetChan(chan ovim.Event) {}
+
 /*
  * The emulation need to interact directly with the editor (and possibly UI, Core)
  * so no loop/channel magic.
