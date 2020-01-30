@@ -12,6 +12,11 @@ import (
 
 var log = logger.GetLogger("termui")
 
+const (
+	MainSource       ovim.InputSource = 0
+	MagicInputSource ovim.InputSource = 31337
+)
+
 type TermUI struct {
 	// internal
 	Screen         tcell.Screen
@@ -23,9 +28,13 @@ type TermUI struct {
 	Width          int
 	Height         int
 
-	Status    string
-	input     string
-	inputMode bool
+	Status string
+
+	// extra input support
+	Source   ovim.InputSource
+	inputPos int
+	prompt   string
+	input    string
 }
 
 func NewTermUI(Editor *ovim.Editor) *TermUI {
@@ -45,7 +54,7 @@ func NewTermUI(Editor *ovim.Editor) *TermUI {
 
 	w, h := s.Size()
 	// adjust for statusbars and box, to be fixed XXX
-	tui := &TermUI{s, Editor, 0, 0, w - 1, h - 3, w, h, "", "", false}
+	tui := &TermUI{s, Editor, 0, 0, w - 1, h - 3, w, h, "", MainSource, 0, "", ""}
 	return tui
 }
 
@@ -67,11 +76,28 @@ func (t *TermUI) Finish() {
 	t.Screen.Fini()
 }
 
-func (t *TermUI) AskInput(prompt string) {
-	t.inputMode = true
-	t.input = ""
-	t.Status = prompt
+func (t *TermUI) AskInput(prompt string) ovim.InputSource {
+	if t.Source == MagicInputSource {
+		log.Println("term ui doesn't support more than one additional input!")
+		return -1
+	}
+	t.Source = MagicInputSource
+	t.prompt = prompt
+	t.inputPos = 0
+	// We only support one additional input so we can just make up some magic number
+	return MagicInputSource
 }
+
+func (t *TermUI) CloseInput(source ovim.InputSource) {
+	t.input = ""
+	t.Source = MainSource
+}
+
+func (t *TermUI) UpdateInput(source ovim.InputSource, s string, pos int) {
+	t.input = s
+	t.inputPos = pos
+}
+
 func (t *TermUI) Loop(c chan ovim.Event) {
 	go func() {
 		defer ovim.RecoverFromPanic(func() {
@@ -86,28 +112,8 @@ func (t *TermUI) Loop(c chan ovim.Event) {
 			switch ev := ev.(type) {
 			case *tcell.EventKey:
 				if k := MapTCellKey(ev); k != nil {
-					if t.inputMode {
-						// if enter or escape, handle it
-						if kk, ok := k.(*ovim.CharacterEvent); ok {
-							// somehow forward to emulation?
-							// editing doesn't have to be fancy, but cancelling
-							// if backspace beyond start is vi-specific
-							t.input += string(kk.Rune)
-						} else if kk, ok := k.(*ovim.KeyEvent); ok {
-							if kk.Key == ovim.KeyEscape {
-								t.inputMode = false
-								log.Printf("Input cancel [%s]", t.input)
-								t.input = ""
-							} else if kk.Key == ovim.KeyEnter {
-								t.inputMode = false
-								log.Printf("Input accept [%s]", t.input)
-								t.input = ""
-							}
-						}
-						t.Render() // since core will not call us
-					} else {
-						c <- k
-					}
+					k.SetSource(t.Source)
+					c <- k
 				}
 			case *tcell.EventResize:
 			}
@@ -117,30 +123,15 @@ func (t *TermUI) Loop(c chan ovim.Event) {
 }
 
 func (t *TermUI) SetStatus(status string) {
-	if !t.inputMode {
+	if t.Source == MainSource {
 		t.Status = status
 	}
 }
 
-func (t *TermUI) DrawBox() {
-	for y := 0; y < t.EditAreaHeight; y++ {
-		t.Screen.SetContent(t.EditAreaWidth, y, '|', nil, tcell.StyleDefault)
-	}
-	for x := 0; x < t.EditAreaWidth; x++ {
-		t.Screen.SetContent(x, t.EditAreaHeight, '-', nil, tcell.StyleDefault)
-	}
-	t.Screen.SetContent(t.EditAreaWidth, t.EditAreaHeight, '+', nil, tcell.StyleDefault)
-}
-
-func (t *TermUI) DrawStatusbar() {
+func (t *TermUI) drawBottomRow(s string) {
 	x := 0
 
-	line := t.Status
-
-	if t.inputMode {
-		line += t.input
-	}
-	for _, r := range line { // XXX May overflow
+	for _, r := range s { // XXX May overflow
 		t.Screen.SetContent(x, t.Height-1, r, nil, tcell.StyleDefault)
 		x++
 	}
@@ -148,6 +139,16 @@ func (t *TermUI) DrawStatusbar() {
 		t.Screen.SetContent(x, t.Height-1, ' ', nil, tcell.StyleDefault)
 		x++
 	}
+
+}
+func (t *TermUI) DrawStatusbar() {
+	t.drawBottomRow(t.Status)
+}
+
+func (t *TermUI) DrawInput() {
+	t.drawBottomRow(t.prompt + t.input)
+	log.Printf("Cursor at %d %d", t.inputPos, t.Height-1)
+	t.Screen.ShowCursor(t.inputPos, t.Height-1)
 }
 
 /*
@@ -171,10 +172,6 @@ func (t *TermUI) Render() {
 	if primaryCursor.Line < t.ViewportY {
 		t.ViewportY = primaryCursor.Line
 	}
-
-	t.DrawStatusbar()
-
-	t.DrawBox()
 
 	/*
 	 * Print the text within the current viewports, padding lines with `fillRune`
@@ -206,5 +203,15 @@ func (t *TermUI) Render() {
 		}
 		// else probably show at (0,0)
 	}
+
+	// DrawInput may draw a cursor that has to override the main one
+	// (tcell doesn't support multiple cursors?)
+	// (but we may able to simulate those)
+	if t.Source == MainSource {
+		t.DrawStatusbar()
+	} else {
+		t.DrawInput()
+	}
+
 	t.Screen.Sync()
 }

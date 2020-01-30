@@ -49,38 +49,70 @@ const (
 	*/
 )
 
-type Event interface {
+type InputSource int
+type Event interface { // UIEvent?
 	Equals(Event) bool
+	SetSource(InputSource)
+	GetSource() InputSource
 }
 
 type KeyEvent struct {
 	Modifier KeyModifier
 	Key      KeyType
 	Rune     rune
+	Source   InputSource
 }
 
-func (e KeyEvent) Equals(other Event) bool {
-	if ke, ok := other.(KeyEvent); ok {
-		return ke.Modifier == e.Modifier && ke.Key == e.Key && (ke.Rune == 0 || ke.Rune == e.Rune)
+func (e *KeyEvent) Equals(other Event) bool {
+	if ke, ok := other.(*KeyEvent); ok {
+		return ke.Source == e.Source && ke.Modifier == e.Modifier && ke.Key == e.Key && (ke.Rune == 0 || ke.Rune == e.Rune)
 	}
 	return false
+}
+
+func (e *KeyEvent) SetSource(s InputSource) {
+	e.Source = s
+}
+
+func (e *KeyEvent) GetSource() InputSource {
+	return e.Source
 }
 
 type CharacterEvent struct {
-	Rune rune
+	Rune   rune
+	Source InputSource
 }
 
-func (e CharacterEvent) Equals(other Event) bool {
-	if ce, ok := other.(CharacterEvent); ok {
-		return ce.Rune == 0 || ce.Rune == e.Rune
+func (e *CharacterEvent) Equals(other Event) bool {
+	if ce, ok := other.(*CharacterEvent); ok {
+		return ce.Source == e.Source && (ce.Rune == 0 || ce.Rune == e.Rune)
 	}
 	return false
 }
 
-type AskInputEvent struct {
-	Prompt string
+func (e *CharacterEvent) SetSource(s InputSource) {
+	e.Source = s
 }
 
-func (e AskInputEvent) Equals(other Event) bool {
-	return false
+func (e *CharacterEvent) GetSource() InputSource {
+	return e.Source
+}
+
+type InputID int
+
+// This is/should be a different kind of event
+type EmuEvent interface{}
+
+type AskInputEvent struct {
+	ID     InputID
+	Prompt string
+}
+type CloseInputEvent struct {
+	ID InputID
+}
+
+type UpdateInputEvent struct {
+	ID   InputID
+	Text string
+	Pos  int
 }

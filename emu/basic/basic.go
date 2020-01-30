@@ -35,7 +35,7 @@ func NewBasic(e *ovim.Editor) *Basic {
 }
 
 // SetChan passes us a channel to communicate with the core.
-func (em *Basic) SetChan(chan ovim.Event) {}
+func (em *Basic) SetChan(chan ovim.EmuEvent) {}
 
 /*
  * The emulation need to interact directly with the editor (and possibly UI, Core)
@@ -77,7 +77,7 @@ func (em *Basic) Backspace() {
  *
  * Also, who is in charge of updating the cursor(s)?
  */
-func (em *Basic) HandleEvent(event ovim.Event) bool {
+func (em *Basic) HandleEvent(_ ovim.InputID, event ovim.Event) bool {
 	switch ev := event.(type) {
 	case *ovim.KeyEvent:
 		// control keys, purely control

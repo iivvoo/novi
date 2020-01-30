@@ -76,7 +76,7 @@ func (em *Vi) MoveCursorRune(r rune, count int) bool {
 // HandleMoveCursors moves the cursors based on the given event
 func (em *Vi) HandleMoveCursors(ev ovim.Event) bool {
 	for _, c := range em.Editor.Cursors {
-		em.Move(c, ovim.CursorMap[ev.(ovim.KeyEvent).Key])
+		em.Move(c, ovim.CursorMap[ev.(*ovim.KeyEvent).Key])
 	}
 	return true
 }

@@ -1,9 +1,9 @@
 package ovim
 
 type Emulation interface {
-	HandleEvent(Event) bool
+	HandleEvent(InputID, Event) bool
 	GetStatus(int) string
-	SetChan(chan Event)
+	SetChan(chan EmuEvent)
 }
 
 type UI interface {
@@ -12,7 +12,9 @@ type UI interface {
 	SetStatus(string)
 	Render()
 	GetDimension() (int, int)
-	AskInput(string)
+	AskInput(string) InputSource
+	CloseInput(InputSource)
+	UpdateInput(InputSource, string, int)
 }
 
 type Core struct {
@@ -28,7 +30,10 @@ func NewCore(e *Editor, ui UI, em Emulation) *Core {
 func (c *Core) Loop() {
 	// One handler can add to the other channel, make sure they don't block
 	uiChan := make(chan Event, 2)
-	emuChan := make(chan Event, 2)
+	emuChan := make(chan EmuEvent, 2)
+
+	ui2emu := map[InputSource]InputID{0: 0}
+	emu2ui := map[InputID]InputSource{0: 0}
 
 	c.Emulation.SetChan(emuChan)
 	c.UI.Render()
@@ -47,7 +52,10 @@ main:
 
 			switch e := ev.(type) {
 			case *KeyEvent, *CharacterEvent:
-				if !c.Emulation.HandleEvent(e) {
+				id, ok := ui2emu[e.GetSource()]
+				if !ok {
+					log.Printf("Got event from unmapped source: %d", e.GetSource())
+				} else if !c.Emulation.HandleEvent(id, e) {
 					break main
 				}
 			}
@@ -55,8 +63,17 @@ main:
 			switch e := ev.(type) {
 			// other events we can handle here: quit, save file, open file
 			case *AskInputEvent:
-				log.Printf("Received AskInputEvent: %s", e.Prompt)
-				c.UI.AskInput(e.Prompt)
+				id := c.UI.AskInput(e.Prompt)
+				log.Printf("Received AskInputEvent: %s -> %d", e.Prompt, id)
+				ui2emu[id] = e.ID
+				emu2ui[e.ID] = id
+			case *CloseInputEvent:
+				log.Printf("Core: CloseEvent %d", e.ID)
+				source := emu2ui[e.ID]
+				c.UI.CloseInput(source)
+			case *UpdateInputEvent:
+				source := emu2ui[e.ID]
+				c.UI.UpdateInput(source, e.Text, e.Pos)
 			}
 		}
 	}

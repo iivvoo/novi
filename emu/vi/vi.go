@@ -47,6 +47,12 @@ const (
 	ModeCommand
 )
 
+// MainInputID identifies input from the main editing area
+const MainInputID ovim.InputID = 0
+
+// ExInputID identifies the ex command input
+const ExInputID ovim.InputID = 1
+
 // DispatchHandler is the signature for a handler in the dispatch table
 type DispatchHandler func(ovim.Event) bool
 
@@ -78,8 +84,9 @@ type Vi struct {
 	CommandBuffer string
 	Counter       int
 
+	exBuffer string
 	dispatch []Dispatch
-	c        chan ovim.Event
+	c        chan ovim.EmuEvent
 }
 
 /*
@@ -108,47 +115,49 @@ type Vi struct {
 func NewVi(e *ovim.Editor) *Vi {
 	em := &Vi{Editor: e, Mode: ModeCommand}
 	dispatch := []Dispatch{
-		Dispatch{Mode: ModeCommand, Event: ovim.CharacterEvent{Rune: ':'}, Handler: em.HandleExCommand},
-		Dispatch{Mode: ModeEdit, Event: ovim.KeyEvent{Key: ovim.KeyEscape}, Handler: em.HandleToModeCommand},
-		Dispatch{Mode: ModeCommand, Event: ovim.KeyEvent{Key: ovim.KeyEscape}, Handler: em.HandleCommandClear},
-		Dispatch{Mode: ModeCommand, Event: ovim.KeyEvent{Key: ovim.KeyEnter}, Handler: em.HandleCommandEnter},
-		Dispatch{Mode: ModeEdit, Event: ovim.KeyEvent{Key: ovim.KeyEnter}, Handler: em.HandleEditEnter},
+		Dispatch{Mode: ModeCommand, Event: &ovim.CharacterEvent{Rune: ':'}, Handler: em.HandleExCommand},
+		Dispatch{Mode: ModeEdit, Event: &ovim.KeyEvent{Key: ovim.KeyEscape}, Handler: em.HandleToModeCommand},
+		Dispatch{Mode: ModeCommand, Event: &ovim.KeyEvent{Key: ovim.KeyEscape}, Handler: em.HandleCommandClear},
+		Dispatch{Mode: ModeCommand, Event: &ovim.KeyEvent{Key: ovim.KeyEnter}, Handler: em.HandleCommandEnter},
+		Dispatch{Mode: ModeEdit, Event: &ovim.KeyEvent{Key: ovim.KeyEnter}, Handler: em.HandleEditEnter},
 		Dispatch{Mode: ModeCommand, Events: []ovim.Event{
-			ovim.CharacterEvent{Rune: 'i'},
-			ovim.CharacterEvent{Rune: 'I'},
-			ovim.CharacterEvent{Rune: 'o'},
-			ovim.CharacterEvent{Rune: 'O'},
-			ovim.CharacterEvent{Rune: 'a'},
-			ovim.CharacterEvent{Rune: 'A'},
+			&ovim.CharacterEvent{Rune: 'i'},
+			&ovim.CharacterEvent{Rune: 'I'},
+			&ovim.CharacterEvent{Rune: 'o'},
+			&ovim.CharacterEvent{Rune: 'O'},
+			&ovim.CharacterEvent{Rune: 'a'},
+			&ovim.CharacterEvent{Rune: 'A'},
 		}, Handler: em.HandleInsertionKeys},
 
 		Dispatch{Mode: ModeAny, Events: []ovim.Event{
-			ovim.KeyEvent{Key: ovim.KeyLeft},
-			ovim.KeyEvent{Key: ovim.KeyRight},
-			ovim.KeyEvent{Key: ovim.KeyUp},
-			ovim.KeyEvent{Key: ovim.KeyDown},
-			ovim.KeyEvent{Key: ovim.KeyEnd},
-			ovim.KeyEvent{Key: ovim.KeyHome},
+			&ovim.KeyEvent{Key: ovim.KeyLeft},
+			&ovim.KeyEvent{Key: ovim.KeyRight},
+			&ovim.KeyEvent{Key: ovim.KeyUp},
+			&ovim.KeyEvent{Key: ovim.KeyDown},
+			&ovim.KeyEvent{Key: ovim.KeyEnd},
+			&ovim.KeyEvent{Key: ovim.KeyHome},
 		}, Handler: em.HandleMoveCursors},
 		Dispatch{Mode: ModeAny, Events: []ovim.Event{
-			ovim.KeyEvent{Key: ovim.KeyBackspace},
-			ovim.KeyEvent{Key: ovim.KeyDelete},
+			&ovim.KeyEvent{Key: ovim.KeyBackspace},
+			&ovim.KeyEvent{Key: ovim.KeyDelete},
 		}, Handler: em.HandleBackspace},
 		// Sort of a generic fallthrough handler - handles commands in command mode
-		Dispatch{Mode: ModeCommand, Event: ovim.CharacterEvent{}, Handler: em.HandleCommandBuffer},
-		Dispatch{Mode: ModeEdit, Event: ovim.CharacterEvent{}, Handler: em.HandleAnyRune},
+		Dispatch{Mode: ModeCommand, Event: &ovim.CharacterEvent{}, Handler: em.HandleCommandBuffer},
+		Dispatch{Mode: ModeEdit, Event: &ovim.CharacterEvent{}, Handler: em.HandleAnyRune},
 	}
 	em.dispatch = dispatch
 	return em
 }
 
-func (em *Vi) SetChan(c chan ovim.Event) {
+// SetChan sets up a channel for communiction with the core
+func (em *Vi) SetChan(c chan ovim.EmuEvent) {
 	em.c = c
 }
 
 // HandleExCommand handles the ':' ex command input
 func (em *Vi) HandleExCommand(ev ovim.Event) bool {
-	em.c <- &ovim.AskInputEvent{Prompt: ":"}
+	em.exBuffer = ""
+	em.c <- &ovim.AskInputEvent{ID: ExInputID, Prompt: ":"}
 	return true
 }
 
@@ -256,7 +265,22 @@ func (em *Vi) JumpStartEndLine(howmany int, jumpstart bool) {
 }
 
 // HandleEvent is the main entry point
-func (em *Vi) HandleEvent(event ovim.Event) bool {
+func (em *Vi) HandleEvent(id ovim.InputID, event ovim.Event) bool {
+	if id == ExInputID {
+		if kk, ok := event.(*ovim.CharacterEvent); ok {
+			em.exBuffer += string(kk.Rune)
+			em.c <- &ovim.UpdateInputEvent{ID: 1, Text: em.exBuffer, Pos: len(em.exBuffer) + 1}
+		} else if kk, ok := event.(*ovim.KeyEvent); ok {
+			if kk.Key == ovim.KeyEscape {
+				em.c <- &ovim.CloseInputEvent{ID: 1}
+			} else if kk.Key == ovim.KeyEnter {
+				em.c <- &ovim.CloseInputEvent{ID: 1}
+			}
+		}
+		return true
+	}
+
+	// Must be MainInputID
 	for _, d := range em.dispatch {
 		if d.Do(event, em.Mode) {
 			// returns false if we need to exit
@@ -270,7 +294,7 @@ func (em *Vi) HandleEvent(event ovim.Event) bool {
 func (em *Vi) HandleInsertionKeys(ev ovim.Event) bool {
 	em.Mode = ModeEdit
 
-	r := ev.(ovim.CharacterEvent).Rune
+	r := ev.(*ovim.CharacterEvent).Rune
 	first := em.Editor.Cursors[0]
 
 	switch r {
