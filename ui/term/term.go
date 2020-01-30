@@ -147,7 +147,6 @@ func (t *TermUI) DrawStatusbar() {
 
 func (t *TermUI) DrawInput() {
 	t.drawBottomRow(t.prompt + t.input)
-	log.Printf("Cursor at %d %d", t.inputPos, t.Height-1)
 	t.Screen.ShowCursor(t.inputPos, t.Height-1)
 }
 
