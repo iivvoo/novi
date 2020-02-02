@@ -1,6 +1,11 @@
 package viemu
 
-import "github.com/iivvoo/ovim/ovim"
+import (
+	"strconv"
+	"strings"
+
+	"github.com/iivvoo/ovim/ovim"
+)
 
 type Input struct {
 	Buffer *Line
@@ -14,6 +19,10 @@ func NewInput() *Input {
 func (i *Input) Clear() {
 	i.Pos = 0
 	i.Buffer = NewLine()
+}
+
+func (i *Input) ToString() string {
+	return i.Buffer.ToString()
 }
 
 func (i *Input) Len() int {
@@ -75,6 +84,15 @@ func (em *Vi) HandleExCommand() {
 	 * :w :w!
 	 * :<linenumber>
 	 */
+	cmd := strings.TrimSpace(em.ex.input.ToString())
+	if number, err := strconv.Atoi(cmd); err == nil {
+		if number > em.Editor.Buffer.Length() {
+			number = em.Editor.Buffer.Length()
+		}
+		first := em.Editor.Cursors[0]
+		first.Line = number - 1
+		return
+	}
 }
 
 // HandleExKey handles non-character "special" keys such as cursor keys, escape, backspace
@@ -99,10 +117,10 @@ func (em *Vi) HandleExKey(e *ovim.KeyEvent) {
 	case ovim.KeyEscape:
 		em.c <- &ovim.CloseInputEvent{ID: 1}
 	case ovim.KeyEnter:
-		// handle ex command
+		em.HandleExCommand()
 		em.c <- &ovim.CloseInputEvent{ID: 1}
 	}
-	em.c <- &ovim.UpdateInputEvent{ID: 1, Text: em.ex.input.Buffer.ToString(), Pos: em.ex.input.Pos}
+	em.c <- &ovim.UpdateInputEvent{ID: 1, Text: em.ex.input.ToString(), Pos: em.ex.input.Pos}
 }
 
 // HandleExInput handles the Ex input events
