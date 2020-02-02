@@ -96,7 +96,7 @@ func (o *Ovi) UpdateStatus() {
 
 func (o *Ovi) HandleInput(event *tcell.EventKey) *tcell.EventKey {
 	if e := termui.MapTCellKey(event); e != nil {
-		if o.Emulation.HandleEvent(e) {
+		if o.Emulation.HandleEvent(0, e) {
 			o.UpdateStatus()
 			return nil
 		}

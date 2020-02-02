@@ -83,7 +83,7 @@ func (t *TermUI) AskInput(prompt string) ovim.InputSource {
 	}
 	t.Source = MagicInputSource
 	t.prompt = prompt
-	t.inputPos = 0
+	t.inputPos = len(t.prompt)
 	// We only support one additional input so we can just make up some magic number
 	return MagicInputSource
 }
@@ -95,7 +95,7 @@ func (t *TermUI) CloseInput(source ovim.InputSource) {
 
 func (t *TermUI) UpdateInput(source ovim.InputSource, s string, pos int) {
 	t.input = s
-	t.inputPos = pos
+	t.inputPos = len(t.prompt) + pos
 }
 
 func (t *TermUI) Loop(c chan ovim.Event) {

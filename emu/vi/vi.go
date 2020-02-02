@@ -84,7 +84,7 @@ type Vi struct {
 	CommandBuffer string
 	Counter       int
 
-	exBuffer string
+	ex       *Ex
 	dispatch []Dispatch
 	c        chan ovim.EmuEvent
 }
@@ -113,9 +113,9 @@ type Vi struct {
 
 // NewVi creates/setups up a new Vi emulation instance
 func NewVi(e *ovim.Editor) *Vi {
-	em := &Vi{Editor: e, Mode: ModeCommand}
+	em := &Vi{Editor: e, Mode: ModeCommand, ex: NewEx()}
 	dispatch := []Dispatch{
-		Dispatch{Mode: ModeCommand, Event: &ovim.CharacterEvent{Rune: ':'}, Handler: em.HandleExCommand},
+		Dispatch{Mode: ModeCommand, Event: &ovim.CharacterEvent{Rune: ':'}, Handler: em.HandleToExCommand},
 		Dispatch{Mode: ModeEdit, Event: &ovim.KeyEvent{Key: ovim.KeyEscape}, Handler: em.HandleToModeCommand},
 		Dispatch{Mode: ModeCommand, Event: &ovim.KeyEvent{Key: ovim.KeyEscape}, Handler: em.HandleCommandClear},
 		Dispatch{Mode: ModeCommand, Event: &ovim.KeyEvent{Key: ovim.KeyEnter}, Handler: em.HandleCommandEnter},
@@ -154,9 +154,9 @@ func (em *Vi) SetChan(c chan ovim.EmuEvent) {
 	em.c = c
 }
 
-// HandleExCommand handles the ':' ex command input
-func (em *Vi) HandleExCommand(ev ovim.Event) bool {
-	em.exBuffer = ""
+// HandleToExCommand handles the ':' ex command input
+func (em *Vi) HandleToExCommand(ev ovim.Event) bool {
+	em.ex.Clear()
 	em.c <- &ovim.AskInputEvent{ID: ExInputID, Prompt: ":"}
 	return true
 }
@@ -267,17 +267,7 @@ func (em *Vi) JumpStartEndLine(howmany int, jumpstart bool) {
 // HandleEvent is the main entry point
 func (em *Vi) HandleEvent(id ovim.InputID, event ovim.Event) bool {
 	if id == ExInputID {
-		if kk, ok := event.(*ovim.CharacterEvent); ok {
-			em.exBuffer += string(kk.Rune)
-			em.c <- &ovim.UpdateInputEvent{ID: 1, Text: em.exBuffer, Pos: len(em.exBuffer) + 1}
-		} else if kk, ok := event.(*ovim.KeyEvent); ok {
-			if kk.Key == ovim.KeyEscape {
-				em.c <- &ovim.CloseInputEvent{ID: 1}
-			} else if kk.Key == ovim.KeyEnter {
-				em.c <- &ovim.CloseInputEvent{ID: 1}
-			}
-		}
-		return true
+		return em.HandleExInput(event)
 	}
 
 	// Must be MainInputID
