@@ -378,11 +378,6 @@ func (em *Vi) HandleCommandBuffer(ev ovim.Event) bool {
 	return false
 }
 
-// SaveFile tells the editor to save the file
-func (em *Vi) SaveFile() {
-	em.Editor.SaveFile()
-}
-
 // CheckExecuteCommandBuffer checks if there's a full, complete command and, if so, executes it
 func (em *Vi) CheckExecuteCommandBuffer() bool {
 	/*
@@ -416,9 +411,11 @@ func (em *Vi) CheckExecuteCommandBuffer() bool {
 		em.JumpStartEndLine(count, command == "^")
 		em.CommandBuffer = ""
 	case "ZZ":
-		em.SaveFile()
+		em.c <- &ovim.SaveEvent{}
+		em.c <- &ovim.QuitEvent{}
 		em.CommandBuffer = ""
 	case "ZQ":
+		em.c <- &ovim.QuitEvent{Force: true}
 		em.CommandBuffer = ""
 		return false // signals exit
 	case "dd":

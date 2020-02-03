@@ -28,6 +28,8 @@ var log = logger.GetLogger("basicemu")
 // The Basic struct encapsulates all state for the Basic Editing emulation
 type Basic struct {
 	Editor *ovim.Editor
+
+	c chan ovim.EmuEvent
 }
 
 func NewBasic(e *ovim.Editor) *Basic {
@@ -35,7 +37,9 @@ func NewBasic(e *ovim.Editor) *Basic {
 }
 
 // SetChan passes us a channel to communicate with the core.
-func (em *Basic) SetChan(chan ovim.EmuEvent) {}
+func (em *Basic) SetChan(c chan ovim.EmuEvent) {
+	em.c = c
+}
 
 /*
  * The emulation need to interact directly with the editor (and possibly UI, Core)
@@ -88,7 +92,7 @@ func (em *Basic) HandleEvent(_ ovim.InputID, event ovim.Event) bool {
 			case 'q':
 				return false
 			case 's':
-				em.Editor.SaveFile()
+				em.c <- &ovim.SaveEvent{}
 				log.Println("File saved")
 			default:
 				log.Printf("Don't know what to do with control key %+v %c", ev, ev.Rune)

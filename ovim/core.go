@@ -77,12 +77,15 @@ main:
 				c.UI.UpdateInput(source, e.Text, e.Pos)
 			case *SaveEvent:
 				log.Printf("SaveEvent %s %v", e.Name, e.Force)
-				// XXX incomplete
-				c.Editor.SaveFile()
+				if err := c.Editor.SaveFile(e.Name, e.Force); err != nil {
+					c.UI.SetError("Could not save: " + err.Error())
+				}
 			case *QuitEvent:
-				log.Printf("QuitEvent %v", e.Force)
-				// XXX incomplete - don't if unsaved changes, send error in stead
-				break main
+				if c.Editor.Buffer.Modified && !e.Force {
+					c.UI.SetError("Unsaved changes, please save first or use q!")
+				} else {
+					break main
+				}
 			case *ErrorEvent:
 				c.UI.SetError(e.Message)
 				log.Printf("ErrorEvent %s", e.Message)

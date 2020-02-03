@@ -93,6 +93,7 @@ func (em *Vi) HandleExCommand() {
 	 *
 	 * :q :q!
 	 * :w :w!
+	 * :x <- wq!
 	 * :<linenumber>
 	 */
 
@@ -126,7 +127,7 @@ func (em *Vi) HandleExCommand() {
 			return
 		}
 		em.JumpTopBottom(0, false)
-	case "w", "wq", "w!", "wq!":
+	case "w", "wq", "w!", "wq!", "x", "x!":
 		if l > 2 {
 			em.c <- &ovim.ErrorEvent{Message: "Extra characters after command"}
 			return

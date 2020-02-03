@@ -2,6 +2,7 @@ package ovim
 
 import (
 	"bufio"
+	"errors"
 	"os"
 
 	"github.com/iivvoo/ovim/logger"
@@ -56,21 +57,43 @@ func (e *Editor) LoadFile(name string) {
 	e.Buffer.Modified = false
 }
 
+var (
+	ErrSaveNoName         = errors.New("No filename set")
+	ErrSaveNoBackup       = errors.New("Could not create backup")
+	ErrSaveFailedCreate   = errors.New("Could not create file")
+	ErrSaveWrite          = errors.New("Failed to write contents")
+	ErrSaveWouldOverwrite = errors.New("Not overwriting existing file")
+)
+
 // SaveFile saves the buffer to a file
-func (e *Editor) SaveFile() {
-	// todo: take from buffer, optionally ask for name
+// Probably needs to return a proper error
+func (e *Editor) SaveFile(name string, force bool) error {
+	changed := name != "" && e.filename != name
+
+	if name != "" {
+		e.filename = name
+	}
+
+	// only overwrite existing file
+	if changed && !force {
+		if _, err := os.Stat(e.filename); err == nil || !os.IsNotExist(err) {
+			return ErrSaveWouldOverwrite
+		}
+	}
+
 	if e.filename == "" {
 		log.Println("No filename set on buffer, can't save")
-		return
+		return ErrSaveNoName
 	}
+
 	if err := CopyFile(e.filename, e.filename+".bak"); err != nil {
 		log.Printf("Failed to make backup copy for %s: %v", e.filename, err)
-		return
+		return ErrSaveNoBackup
 	}
 	f, err := os.Create(e.filename)
 	if err != nil {
 		log.Printf("Failed to open/create %s: %v", e.filename, err)
-		return
+		return ErrSaveFailedCreate
 	}
 	defer f.Close()
 
@@ -79,13 +102,14 @@ func (e *Editor) SaveFile() {
 	for _, line := range e.Buffer.Lines {
 		if _, err := w.WriteString(string(line) + "\n"); err != nil {
 			log.Printf("Failed to Write %s: %v", e.filename, err)
-			return
+			return ErrSaveWrite
 		}
 
 	}
 	if err := w.Flush(); err != nil {
 		log.Printf("Failed to Flush %s: %v", e.filename, err)
 	}
+	return nil
 }
 
 // SetCursor sets the first cursor at a specific position
