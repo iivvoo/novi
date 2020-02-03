@@ -121,12 +121,16 @@ func (em *Vi) HandleExCommand() {
 	switch p {
 	case "$": // last line of file
 		// Error if any additional arguments
-		if l == 1 {
-			em.JumpTopBottom(0, false)
-		} else {
-			em.c <- &ovim.ErrorEvent{"Extra characters after command"}
+		if l > 1 {
+			em.c <- &ovim.ErrorEvent{Message: "Extra characters after command"}
+			return
 		}
+		em.JumpTopBottom(0, false)
 	case "w", "wq", "w!", "wq!":
+		if l > 2 {
+			em.c <- &ovim.ErrorEvent{Message: "Extra characters after command"}
+			return
+		}
 		force := strings.ContainsRune(p, '!')
 		quit := strings.ContainsRune(p, 'q')
 		fname := ""
@@ -138,9 +142,12 @@ func (em *Vi) HandleExCommand() {
 			em.c <- &ovim.QuitEvent{Force: force}
 		}
 	case "q", "q!":
+		if l > 1 {
+			em.c <- &ovim.ErrorEvent{Message: "Extra characters after command"}
+			return
+		}
 		force := strings.ContainsRune(p, '!')
 		em.c <- &ovim.QuitEvent{Force: force}
-
 	}
 }
 
