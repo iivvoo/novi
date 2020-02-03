@@ -116,3 +116,16 @@ type UpdateInputEvent struct {
 	Text string
 	Pos  int
 }
+
+type QuitEvent struct {
+	Force bool
+}
+
+type SaveEvent struct {
+	Name  string
+	Force bool
+}
+
+type ErrorEvent struct {
+	Message string
+}

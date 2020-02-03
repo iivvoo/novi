@@ -7,28 +7,34 @@ import (
 	"github.com/iivvoo/ovim/ovim"
 )
 
+// Input holds the state of a simple input buffer
 type Input struct {
 	Buffer *Line
 	Pos    int
 }
 
+// NewInput creates a new input
 func NewInput() *Input {
 	return &Input{NewLine(), 0}
 }
 
+// Clear clears the input, resetting its size/contents to empty
 func (i *Input) Clear() {
 	i.Pos = 0
 	i.Buffer = NewLine()
 }
 
+// ToString returns the string representation of the contents of the input
 func (i *Input) ToString() string {
 	return i.Buffer.ToString()
 }
 
+// Len returns the length of the input
 func (i *Input) Len() int {
 	return i.Buffer.Len()
 }
 
+// Backspace performs the backspace operation on the input on the current cursor position
 func (i *Input) Backspace() {
 	if i.Pos > 0 {
 		i.Buffer.RemoveRune(i.Pos - 1)
@@ -36,18 +42,21 @@ func (i *Input) Backspace() {
 	}
 }
 
+// CursorLeft moves the cursor left 1 position, if possible
 func (i *Input) CursorLeft() {
 	if i.Pos > 0 {
 		i.Pos--
 	}
 }
 
+// CursorRight moves the cursor right 1 position, if possible
 func (i *Input) CursorRight() {
 	if i.Pos < i.Buffer.Len() {
 		i.Pos++
 	}
 }
 
+// Insert inserts a rune at the current cursor position and advances the cursor
 func (i *Input) Insert(r rune) {
 	i.Buffer.InsertRune(r, i.Pos)
 	i.Pos++
@@ -58,10 +67,12 @@ type Ex struct {
 	input *Input
 }
 
+// NewEx creates a new Ex instance
 func NewEx() *Ex {
 	return &Ex{input: NewInput()}
 }
 
+// Clear clears the ex instance (input)
 func (ex *Ex) Clear() {
 	ex.input.Clear()
 }
@@ -84,14 +95,52 @@ func (em *Vi) HandleExCommand() {
 	 * :w :w!
 	 * :<linenumber>
 	 */
+
 	cmd := strings.TrimSpace(em.ex.input.ToString())
+
+	if cmd == "" {
+		return
+	}
+
 	if number, err := strconv.Atoi(cmd); err == nil {
+		if number <= 0 {
+			number = 1
+		}
 		if number > em.Editor.Buffer.Length() {
 			number = em.Editor.Buffer.Length()
 		}
 		first := em.Editor.Cursors[0]
 		first.Line = number - 1
 		return
+	}
+
+	parts := strings.Split(cmd, " ")
+	p := parts[0]
+	l := len(parts)
+	// may contain filename?
+	switch p {
+	case "$": // last line of file
+		// Error if any additional arguments
+		if l == 1 {
+			em.JumpTopBottom(0, false)
+		} else {
+			em.c <- &ovim.ErrorEvent{"Extra characters after command"}
+		}
+	case "w", "wq", "w!", "wq!":
+		force := strings.ContainsRune(p, '!')
+		quit := strings.ContainsRune(p, 'q')
+		fname := ""
+		if l > 1 {
+			fname = parts[1]
+		}
+		em.c <- &ovim.SaveEvent{Name: fname, Force: force}
+		if quit {
+			em.c <- &ovim.QuitEvent{Force: force}
+		}
+	case "q", "q!":
+		force := strings.ContainsRune(p, '!')
+		em.c <- &ovim.QuitEvent{Force: force}
+
 	}
 }
 
@@ -115,10 +164,14 @@ func (em *Vi) HandleExKey(e *ovim.KeyEvent) {
 	case ovim.KeyRight:
 		em.ex.input.CursorRight()
 	case ovim.KeyEscape:
+		em.ex.Clear()
 		em.c <- &ovim.CloseInputEvent{ID: 1}
+		return
 	case ovim.KeyEnter:
 		em.HandleExCommand()
+		em.ex.Clear()
 		em.c <- &ovim.CloseInputEvent{ID: 1}
+		return
 	}
 	em.c <- &ovim.UpdateInputEvent{ID: 1, Text: em.ex.input.ToString(), Pos: em.ex.input.Pos}
 }

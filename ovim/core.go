@@ -10,6 +10,7 @@ type UI interface {
 	Finish()
 	Loop(chan Event)
 	SetStatus(string)
+	SetError(string)
 	Render()
 	GetDimension() (int, int)
 	AskInput(string) InputSource
@@ -74,6 +75,17 @@ main:
 			case *UpdateInputEvent:
 				source := emu2ui[e.ID]
 				c.UI.UpdateInput(source, e.Text, e.Pos)
+			case *SaveEvent:
+				log.Printf("SaveEvent %s %v", e.Name, e.Force)
+				// XXX incomplete
+				c.Editor.SaveFile()
+			case *QuitEvent:
+				log.Printf("QuitEvent %v", e.Force)
+				// XXX incomplete - don't if unsaved changes, send error in stead
+				break main
+			case *ErrorEvent:
+				c.UI.SetError(e.Message)
+				log.Printf("ErrorEvent %s", e.Message)
 			}
 		}
 	}

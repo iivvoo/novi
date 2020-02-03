@@ -3,6 +3,7 @@ package termui
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/gdamore/tcell"
 	"github.com/gdamore/tcell/encoding"
@@ -29,6 +30,7 @@ type TermUI struct {
 	Height         int
 
 	Status string
+	Error  string
 
 	// extra input support
 	Source   ovim.InputSource
@@ -54,7 +56,7 @@ func NewTermUI(Editor *ovim.Editor) *TermUI {
 
 	w, h := s.Size()
 	// adjust for statusbars and box, to be fixed XXX
-	tui := &TermUI{s, Editor, 0, 0, w - 1, h - 3, w, h, "", MainSource, 0, "", ""}
+	tui := &TermUI{s, Editor, 0, 0, w - 1, h - 3, w, h, "", "", MainSource, 0, "", ""}
 	return tui
 }
 
@@ -128,11 +130,25 @@ func (t *TermUI) SetStatus(status string) {
 	}
 }
 
-func (t *TermUI) drawBottomRow(s string) {
+func (t *TermUI) SetError(message string) {
+	t.Error = message
+
+	go func() {
+		time.Sleep(time.Second * 3)
+		t.Error = ""
+		t.Render()
+	}()
+}
+func (t *TermUI) drawBottomRow(s string, error bool) {
 	x := 0
 
+	style := tcell.StyleDefault
+
+	if error {
+		style = style.Foreground(tcell.ColorWhite).Background(tcell.ColorRed)
+	}
 	for _, r := range s { // XXX May overflow
-		t.Screen.SetContent(x, t.Height-1, r, nil, tcell.StyleDefault)
+		t.Screen.SetContent(x, t.Height-1, r, nil, style)
 		x++
 	}
 	for x < t.EditAreaWidth {
@@ -142,11 +158,15 @@ func (t *TermUI) drawBottomRow(s string) {
 
 }
 func (t *TermUI) DrawStatusbar() {
-	t.drawBottomRow(t.Status)
+	if t.Error != "" {
+		t.drawBottomRow(t.Error, true)
+	} else {
+		t.drawBottomRow(t.Status, false)
+	}
 }
 
 func (t *TermUI) DrawInput() {
-	t.drawBottomRow(t.prompt + t.input)
+	t.drawBottomRow(t.prompt+t.input, false)
 	t.Screen.ShowCursor(t.inputPos, t.Height-1)
 }
 
