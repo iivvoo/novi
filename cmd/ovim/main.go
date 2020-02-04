@@ -2,8 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -43,10 +41,6 @@ func start() {
 		}
 	}
 
-	if len(flag.Args()) != 1 {
-		fmt.Println("Usage: ovim filename")
-		os.Exit(1)
-	}
 	// initialize logger
 	logger.OpenLog("ovim.log")
 	log.Printf("Starting at %s\n", time.Now())
@@ -59,7 +53,11 @@ func start() {
 		ui.Finish()
 	})
 
-	fileName := flag.Args()[0]
+	fileName := ""
+
+	if len(flag.Args()) > 0 {
+		fileName = flag.Args()[0]
+	}
 
 	editor.LoadFile(fileName)
 	editor.SetCursor(8, 0)
