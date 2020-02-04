@@ -48,7 +48,7 @@ func (e *Editor) LoadFile(name string) {
 	// reset everything
 
 	file, err := os.Open(name)
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		panic(err)
 	}
 
@@ -63,19 +63,28 @@ var (
 	ErrSaveFailedCreate   = errors.New("Could not create file")
 	ErrSaveWrite          = errors.New("Failed to write contents")
 	ErrSaveWouldOverwrite = errors.New("Not overwriting existing file")
+	ErrSaveOther          = errors.New("Other error")
 )
 
 // SaveFile saves the buffer to a file
-// Probably needs to return a proper error
 func (e *Editor) SaveFile(name string, force bool) error {
 	changed := name != "" && e.filename != name
+	exists := true
 
 	if name != "" {
 		e.filename = name
 	}
 
+	if _, err := os.Stat(e.filename); err != nil {
+		if os.IsNotExist(err) {
+			exists = false
+		} else {
+			return ErrSaveOther
+		}
+	}
+
 	// only overwrite existing file
-	if changed && !force {
+	if changed && exists && !force {
 		if _, err := os.Stat(e.filename); err == nil || !os.IsNotExist(err) {
 			return ErrSaveWouldOverwrite
 		}
@@ -86,9 +95,11 @@ func (e *Editor) SaveFile(name string, force bool) error {
 		return ErrSaveNoName
 	}
 
-	if err := CopyFile(e.filename, e.filename+".bak"); err != nil {
-		log.Printf("Failed to make backup copy for %s: %v", e.filename, err)
-		return ErrSaveNoBackup
+	if exists {
+		if err := CopyFile(e.filename, e.filename+".bak"); err != nil {
+			log.Printf("Failed to make backup copy for %s: %v", e.filename, err)
+			return ErrSaveNoBackup
+		}
 	}
 	f, err := os.Create(e.filename)
 	if err != nil {
@@ -109,6 +120,8 @@ func (e *Editor) SaveFile(name string, force bool) error {
 	if err := w.Flush(); err != nil {
 		log.Printf("Failed to Flush %s: %v", e.filename, err)
 	}
+
+	e.Buffer.Modified = false
 	return nil
 }
 

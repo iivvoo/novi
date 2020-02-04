@@ -30,8 +30,8 @@ func NewCore(e *Editor, ui UI, em Emulation) *Core {
 
 func (c *Core) Loop() {
 	// One handler can add to the other channel, make sure they don't block
-	uiChan := make(chan Event, 2)
-	emuChan := make(chan EmuEvent, 2)
+	uiChan := make(chan Event, 10)
+	emuChan := make(chan EmuEvent, 10)
 
 	ui2emu := map[InputSource]InputID{0: 0}
 	emu2ui := map[InputID]InputSource{0: 0}
