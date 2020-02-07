@@ -7,18 +7,24 @@ import (
 	"github.com/rivo/tview"
 )
 
+// We're always just one source since the IDE can provide a separate input source
+const (
+	MainSource ovim.InputSource = 0
+)
+
 // implement the OviPrimitive
 type Ovi struct {
 	tview.Primitive
 	Editor     *ovim.Editor
-	Emulation  ovim.Emulation
 	ViewportX  int
 	ViewportY  int
 	editArea   tview.Primitive
 	statusArea *tview.TextView
+	Source     ovim.InputSource
+	c          chan ovim.Event
 }
 
-func NewOviPrimitive(e *ovim.Editor, emu ovim.Emulation, name string) tview.Primitive {
+func NewOviPrimitive(e *ovim.Editor, name string) tview.Primitive {
 	x := tview.NewFlex().SetDirection(tview.FlexRow)
 
 	editArea := tview.NewBox()
@@ -31,14 +37,19 @@ func NewOviPrimitive(e *ovim.Editor, emu ovim.Emulation, name string) tview.Prim
 		ViewportY:  0,
 		Primitive:  x,
 		Editor:     e,
-		Emulation:  emu,
 		editArea:   editArea,
-		statusArea: statusArea}
+		statusArea: statusArea,
+		Source:     MainSource,
+		c:          nil}
 
 	editArea.SetDrawFunc(o.TviewRender)
 	editArea.SetInputCapture(o.HandleInput)
-	o.UpdateStatus()
+	o.UpdateStatus("")
 	return o
+}
+
+func (o *Ovi) SetChan(c chan ovim.Event) {
+	o.c = c
 }
 
 func (o *Ovi) TviewRender(screen tcell.Screen, xx, yy, width, height int) (int, int, int, int) {
@@ -89,17 +100,22 @@ func (o *Ovi) TviewRender(screen tcell.Screen, xx, yy, width, height int) (int, 
 	return 0, 0, 0, 0
 }
 
-func (o *Ovi) UpdateStatus() {
-	_, _, w, _ := o.statusArea.GetRect()
-	o.statusArea.SetText(o.Emulation.GetStatus(w))
+func (o *Ovi) GetDimension() (int, int) {
+	_, _, w, h := o.statusArea.GetRect()
+	return w, h
+}
+func (o *Ovi) UpdateStatus(status string) {
+	o.statusArea.SetText(status)
 }
 
 func (o *Ovi) HandleInput(event *tcell.EventKey) *tcell.EventKey {
 	if e := termui.MapTCellKey(event); e != nil {
-		if o.Emulation.HandleEvent(0, e) {
-			o.UpdateStatus()
-			return nil
-		}
+		e.SetSource(o.Source)
+		o.c <- e
+		// if o.Emulation.HandleEvent(0, e) {
+		// 	o.UpdateStatus()
+		// 	return nil
+		// }
 	}
 	return event
 }

@@ -18,6 +18,7 @@ type UI interface {
 	UpdateInput(InputSource, string, int)
 }
 
+// Core glues Editor, UI and Emulation together, passing messages along as necessary
 type Core struct {
 	Editor    *Editor
 	UI        UI
@@ -53,6 +54,7 @@ main:
 
 			switch e := ev.(type) {
 			case *KeyEvent, *CharacterEvent:
+				log.Printf("Event %v", e)
 				id, ok := ui2emu[e.GetSource()]
 				if !ok {
 					log.Printf("Got event from unmapped source: %d", e.GetSource())

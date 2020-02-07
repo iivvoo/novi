@@ -25,6 +25,45 @@ var log = logger.GetLogger("ovide")
  * - Generic Error Modal (e.g. file create)
  */
 
+type OviUIWrapper struct {
+	prim *Ovi
+}
+
+func (o *OviUIWrapper) Finish() {}
+func (o *OviUIWrapper) Loop(c chan ovim.Event) {
+	o.prim.SetChan(c)
+}
+func (o *OviUIWrapper) SetStatus(status string) {
+	o.prim.statusArea.SetText(status)
+
+}
+func (o *OviUIWrapper) SetError(string) {
+
+}
+func (o *OviUIWrapper) Render() {
+
+}
+func (o *OviUIWrapper) GetDimension() (int, int) {
+	return o.prim.GetDimension()
+}
+func (o *OviUIWrapper) AskInput(string) ovim.InputSource {
+	return 0
+}
+func (o *OviUIWrapper) CloseInput(ovim.InputSource)               {}
+func (o *OviUIWrapper) UpdateInput(ovim.InputSource, string, int) {}
+
+func NewCore(name string, editor *ovim.Editor) *Ovi {
+	emu := viemu.NewVi(editor)
+	prim := NewOviPrimitive(editor, name).(*Ovi)
+	ui := &OviUIWrapper{
+		prim: prim,
+	}
+	c := ovim.NewCore(editor, ui, emu)
+
+	go c.Loop()
+	return prim
+}
+
 // Run just starts everything
 func Run() {
 	c := make(chan Event)
@@ -49,7 +88,7 @@ func Run() {
 	pages := tview.NewPages().
 		AddPage("ide", layout, true, true)
 
-	// TODO: Include some sort of "debugging" Box
+		// This loop handles IDE UI events (e.g. tree, tab).
 	go func() {
 		for {
 			log.Printf("Waiting for command")
@@ -69,9 +108,9 @@ func Run() {
 					editor.LoadFile(e.FullPath)
 					editor.SetCursor(0, 0)
 
-					emu := viemu.NewVi(editor)
+					prim := NewCore(e.Filename, editor)
 
-					app.SetFocus(tabs.AddTab(e.FullPath, e.Filename, NewOviPrimitive(editor, emu, e.Filename)))
+					app.SetFocus(tabs.AddTab(e.FullPath, e.Filename, prim))
 					log.Println("Done opening tab")
 				case *NewFileEvent:
 					NewFileModal(app, pages).
@@ -83,9 +122,9 @@ func Run() {
 							editor.LoadFile(p)
 							editor.SetCursor(0, 0)
 
-							emu := viemu.NewVi(editor)
+							prim := NewCore(s, editor)
 
-							app.SetFocus(tabs.AddTab(p, s, NewOviPrimitive(editor, emu, s)))
+							app.SetFocus(tabs.AddTab(p, s, prim))
 							nav.ClearPlaceHolder()
 							nav.SelectPath(p)
 							// Select added file
@@ -100,7 +139,6 @@ func Run() {
 					app.Stop()
 				}
 			})
-
 		}
 	}()
 
