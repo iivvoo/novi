@@ -6,6 +6,12 @@ type Emulation interface {
 	SetChan(chan EmuEvent)
 }
 
+type SecondInputUI interface {
+	AskInput(string) InputSource
+	CloseInput(InputSource)
+	UpdateInput(InputSource, string, int)
+}
+
 type UI interface {
 	Finish()
 	Loop(chan Event)
@@ -13,20 +19,18 @@ type UI interface {
 	SetError(string)
 	Render()
 	GetDimension() (int, int)
-	AskInput(string) InputSource
-	CloseInput(InputSource)
-	UpdateInput(InputSource, string, int)
 }
 
 // Core glues Editor, UI and Emulation together, passing messages along as necessary
 type Core struct {
 	Editor    *Editor
 	UI        UI
+	Input     SecondInputUI
 	Emulation Emulation
 }
 
-func NewCore(e *Editor, ui UI, em Emulation) *Core {
-	return &Core{Editor: e, UI: ui, Emulation: em}
+func NewCore(e *Editor, ui UI, input SecondInputUI, em Emulation) *Core {
+	return &Core{Editor: e, UI: ui, Input: input, Emulation: em}
 }
 
 func (c *Core) Loop() {
@@ -66,17 +70,17 @@ main:
 			switch e := ev.(type) {
 			// other events we can handle here: quit, save file, open file
 			case *AskInputEvent:
-				id := c.UI.AskInput(e.Prompt)
+				id := c.Input.AskInput(e.Prompt)
 				log.Printf("Received AskInputEvent: %s -> %d", e.Prompt, id)
 				ui2emu[id] = e.ID
 				emu2ui[e.ID] = id
 			case *CloseInputEvent:
 				log.Printf("Core: CloseEvent %d", e.ID)
 				source := emu2ui[e.ID]
-				c.UI.CloseInput(source)
+				c.Input.CloseInput(source)
 			case *UpdateInputEvent:
 				source := emu2ui[e.ID]
-				c.UI.UpdateInput(source, e.Text, e.Pos)
+				c.Input.UpdateInput(source, e.Text, e.Pos)
 			case *SaveEvent:
 				log.Printf("SaveEvent %s %v", e.Name, e.Force)
 				if err := c.Editor.SaveFile(e.Name, e.Force); err != nil {

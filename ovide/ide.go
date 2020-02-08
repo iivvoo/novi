@@ -25,40 +25,46 @@ var log = logger.GetLogger("ovide")
  * - Generic Error Modal (e.g. file create)
  */
 
-type OviUIWrapper struct {
+type UIWrapper struct {
 	prim *Ovi
 }
 
-func (o *OviUIWrapper) Finish() {}
-func (o *OviUIWrapper) Loop(c chan ovim.Event) {
+func (o *UIWrapper) Finish() {}
+func (o *UIWrapper) Loop(c chan ovim.Event) {
 	o.prim.SetChan(c)
 }
-func (o *OviUIWrapper) SetStatus(status string) {
+func (o *UIWrapper) SetStatus(status string) {
 	o.prim.statusArea.SetText(status)
 
 }
-func (o *OviUIWrapper) SetError(string) {
+func (o *UIWrapper) SetError(string) {
 
 }
-func (o *OviUIWrapper) Render() {
+func (o *UIWrapper) Render() {
 
 }
-func (o *OviUIWrapper) GetDimension() (int, int) {
+func (o *UIWrapper) GetDimension() (int, int) {
 	return o.prim.GetDimension()
 }
-func (o *OviUIWrapper) AskInput(string) ovim.InputSource {
+
+type InputUIWrapper struct {
+}
+
+func (i *InputUIWrapper) AskInput(string) ovim.InputSource {
 	return 0
 }
-func (o *OviUIWrapper) CloseInput(ovim.InputSource)               {}
-func (o *OviUIWrapper) UpdateInput(ovim.InputSource, string, int) {}
+func (i *InputUIWrapper) CloseInput(ovim.InputSource)               {}
+func (i *InputUIWrapper) UpdateInput(ovim.InputSource, string, int) {}
 
 func NewCore(name string, editor *ovim.Editor) *Ovi {
 	emu := viemu.NewVi(editor)
 	prim := NewOviPrimitive(editor, name).(*Ovi)
-	ui := &OviUIWrapper{
+	ui := &UIWrapper{
 		prim: prim,
 	}
-	c := ovim.NewCore(editor, ui, emu)
+	input := &InputUIWrapper{}
+
+	c := ovim.NewCore(editor, ui, input, emu)
 
 	go c.Loop()
 	return prim
