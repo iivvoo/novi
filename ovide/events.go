@@ -1,6 +1,6 @@
 package ovide
 
-type Event interface{}
+type IDEEvent interface{}
 
 type DebugEvent struct {
 	Msg string

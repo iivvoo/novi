@@ -18,13 +18,13 @@ type NavTreeEntry struct {
 
 type NavTree struct {
 	*tview.TreeView
-	c          chan Event
+	c          chan IDEEvent
 	current    *NavTreeEntry
 	workFolder *NavTreeEntry
 	m          map[string]*NavTreeEntry
 }
 
-func NewNavTree(c chan Event, path string) *NavTree {
+func NewNavTree(c chan IDEEvent, path string) *NavTree {
 	current := filepath.Base(path)
 
 	tree := &NavTree{c: c}

@@ -66,7 +66,7 @@ func NewCore(name string, editor *ovim.Editor) *Ovi {
 
 // Run just starts everything
 func Run() {
-	c := make(chan Event)
+	c := make(chan IDEEvent)
 
 	app := tview.NewApplication()
 
