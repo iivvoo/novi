@@ -25,8 +25,10 @@ var log = logger.GetLogger("ovide")
  * - Generic Error Modal (e.g. file create)
  */
 
+// Since we're wrapping more and more of o.prim, make that just compliant?
 type UIWrapper struct {
-	prim *Ovi
+	prim    *Ovi
+	command bool
 }
 
 func (o *UIWrapper) Finish() {}
@@ -41,15 +43,31 @@ func (o *UIWrapper) GetDimension() (int, int) {
 }
 
 func (o *UIWrapper) AskInput(string) ovim.InputSource {
-	return 0
+	// handle keys from status
+	log.Printf("AskInput()")
+	o.command = true
+	o.prim.Source = CommandSource
+
+	o.UpdateInput(CommandSource, "", 0)
+	return CommandSource
 }
-func (o *UIWrapper) CloseInput(ovim.InputSource)               {}
-func (o *UIWrapper) UpdateInput(ovim.InputSource, string, int) {}
+func (o *UIWrapper) CloseInput(ovim.InputSource) {
+	o.command = false
+	o.prim.Source = MainSource
+	o.prim.pos = -1 // XXX
+}
+
+func (o *UIWrapper) UpdateInput(source ovim.InputSource, s string, pos int) {
+	o.prim.statusArea.SetText(":" + s)
+	o.prim.pos = pos + 1
+}
 
 func (o *UIWrapper) SetStatus(status string) {
-	o.prim.statusArea.SetText(status)
-
+	if !o.command {
+		o.prim.statusArea.SetText(status)
+	}
 }
+
 func (o *UIWrapper) SetError(string) {
 }
 

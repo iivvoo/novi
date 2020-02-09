@@ -9,7 +9,8 @@ import (
 
 // We're always just one source since the IDE can provide a separate input source
 const (
-	MainSource ovim.InputSource = 0
+	MainSource    ovim.InputSource = 0
+	CommandSource ovim.InputSource = 1
 )
 
 // implement the OviPrimitive
@@ -22,6 +23,7 @@ type Ovi struct {
 	statusArea *tview.TextView
 	Source     ovim.InputSource
 	c          chan ovim.Event
+	pos        int
 }
 
 func NewOviPrimitive(e *ovim.Editor, name string) tview.Primitive {
@@ -40,7 +42,8 @@ func NewOviPrimitive(e *ovim.Editor, name string) tview.Primitive {
 		editArea:   editArea,
 		statusArea: statusArea,
 		Source:     MainSource,
-		c:          nil}
+		c:          nil,
+		pos:        -1}
 
 	editArea.SetDrawFunc(o.TviewRender)
 	editArea.SetInputCapture(o.HandleInput)
@@ -96,6 +99,12 @@ func (o *Ovi) TviewRender(screen tcell.Screen, xx, yy, width, height int) (int, 
 		}
 		// else probably show at (0,0)
 	}
+
+	// A bit hacky: set the cursor on statusArea if it's in input mode
+	if o.pos >= 0 {
+		x, y, _, _ := o.statusArea.GetInnerRect()
+		screen.ShowCursor(x+o.pos, y)
+	}
 	// Leave nothing for other components
 	return 0, 0, 0, 0
 }
@@ -112,6 +121,7 @@ func (o *Ovi) HandleInput(event *tcell.EventKey) *tcell.EventKey {
 	if e := termui.MapTCellKey(event); e != nil {
 		e.SetSource(o.Source)
 		o.c <- e
+		return nil
 		// if o.Emulation.HandleEvent(0, e) {
 		// 	o.UpdateStatus()
 		// 	return nil

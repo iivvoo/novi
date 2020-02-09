@@ -176,6 +176,7 @@ func (em *Vi) HandleExKey(e *ovim.KeyEvent) {
 		em.c <- &ovim.CloseInputEvent{ID: 1}
 		return
 	case ovim.KeyEnter:
+		log.Printf("Handling ex command '%s'", em.ex.input.ToString())
 		em.HandleExCommand()
 		em.ex.Clear()
 		em.c <- &ovim.CloseInputEvent{ID: 1}
