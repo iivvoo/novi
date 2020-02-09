@@ -33,13 +33,6 @@ func (o *UIWrapper) Finish() {}
 func (o *UIWrapper) Loop(c chan ovim.Event) {
 	o.prim.SetChan(c)
 }
-func (o *UIWrapper) SetStatus(status string) {
-	o.prim.statusArea.SetText(status)
-
-}
-func (o *UIWrapper) SetError(string) {
-
-}
 func (o *UIWrapper) Render() {
 
 }
@@ -56,6 +49,18 @@ func (i *InputUIWrapper) AskInput(string) ovim.InputSource {
 func (i *InputUIWrapper) CloseInput(ovim.InputSource)               {}
 func (i *InputUIWrapper) UpdateInput(ovim.InputSource, string, int) {}
 
+type StatusUIWrapper struct {
+	prim *Ovi
+}
+
+func (o *StatusUIWrapper) SetStatus(status string) {
+	o.prim.statusArea.SetText(status)
+
+}
+func (o *StatusUIWrapper) SetError(string) {
+
+}
+
 func NewCore(name string, editor *ovim.Editor) *Ovi {
 	emu := viemu.NewVi(editor)
 	prim := NewOviPrimitive(editor, name).(*Ovi)
@@ -63,8 +68,9 @@ func NewCore(name string, editor *ovim.Editor) *Ovi {
 		prim: prim,
 	}
 	input := &InputUIWrapper{}
+	status := &StatusUIWrapper{prim}
 
-	c := ovim.NewCore(editor, ui, input, emu)
+	c := ovim.NewCore(editor, ui, input, status, emu)
 
 	go c.Loop()
 	return prim

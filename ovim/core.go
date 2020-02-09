@@ -6,17 +6,21 @@ type Emulation interface {
 	SetChan(chan EmuEvent)
 }
 
-type SecondInputUI interface {
+// Don't all UI's need Render()?
+type InputUI interface {
 	AskInput(string) InputSource
 	CloseInput(InputSource)
 	UpdateInput(InputSource, string, int)
 }
 
+type StatusUI interface {
+	SetStatus(string)
+	SetError(string)
+}
+
 type UI interface {
 	Finish()
 	Loop(chan Event)
-	SetStatus(string)
-	SetError(string)
 	Render()
 	GetDimension() (int, int)
 }
@@ -25,12 +29,13 @@ type UI interface {
 type Core struct {
 	Editor    *Editor
 	UI        UI
-	Input     SecondInputUI
+	Input     InputUI
+	Status    StatusUI
 	Emulation Emulation
 }
 
-func NewCore(e *Editor, ui UI, input SecondInputUI, em Emulation) *Core {
-	return &Core{Editor: e, UI: ui, Input: input, Emulation: em}
+func NewCore(e *Editor, ui UI, input InputUI, status StatusUI, em Emulation) *Core {
+	return &Core{Editor: e, UI: ui, Input: input, Status: status, Emulation: em}
 }
 
 func (c *Core) Loop() {
@@ -48,7 +53,7 @@ main:
 	for {
 		width, _ := c.UI.GetDimension()
 		status := c.Emulation.GetStatus(width)
-		c.UI.SetStatus(status)
+		c.Status.SetStatus(status)
 		c.UI.Render()
 		select {
 
@@ -84,16 +89,16 @@ main:
 			case *SaveEvent:
 				log.Printf("SaveEvent %s %v", e.Name, e.Force)
 				if err := c.Editor.SaveFile(e.Name, e.Force); err != nil {
-					c.UI.SetError("Could not save: " + err.Error())
+					c.Status.SetError("Could not save: " + err.Error())
 				}
 			case *QuitEvent:
 				if c.Editor.Buffer.Modified && !e.Force {
-					c.UI.SetError("Unsaved changes, please save first or use q!")
+					c.Status.SetError("Unsaved changes, please save first or use q!")
 				} else {
 					break main
 				}
 			case *ErrorEvent:
-				c.UI.SetError(e.Message)
+				c.Status.SetError(e.Message)
 				log.Printf("ErrorEvent %s", e.Message)
 			}
 		}
