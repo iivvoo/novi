@@ -27,8 +27,7 @@ var log = logger.GetLogger("ovide")
 
 // Since we're wrapping more and more of o.prim, make that just compliant?
 type UIWrapper struct {
-	prim    *Ovi
-	command bool
+	prim *Ovi
 }
 
 func (o *UIWrapper) Finish() {}
@@ -44,14 +43,12 @@ func (o *UIWrapper) GetDimension() (int, int) {
 
 func (o *UIWrapper) AskInput(string) ovim.InputSource {
 	// handle keys from status
-	o.command = true
 	o.prim.Source = CommandSource
 
 	o.UpdateInput(CommandSource, "", 0)
 	return CommandSource
 }
 func (o *UIWrapper) CloseInput(ovim.InputSource) {
-	o.command = false
 	o.prim.Source = MainSource
 }
 
@@ -60,9 +57,7 @@ func (o *UIWrapper) UpdateInput(source ovim.InputSource, s string, pos int) {
 }
 
 func (o *UIWrapper) SetStatus(status string) {
-	if !o.command {
-		o.prim.statusArea.SetText(status)
-	}
+	o.prim.UpdateStatus(status)
 }
 
 func (o *UIWrapper) SetError(string) {
