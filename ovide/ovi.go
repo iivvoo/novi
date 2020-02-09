@@ -26,7 +26,7 @@ type Ovi struct {
 	InputPos   int
 }
 
-func NewOviPrimitive(e *ovim.Editor, name string) tview.Primitive {
+func NewOviPrimitive(e *ovim.Editor) tview.Primitive {
 	x := tview.NewFlex().SetDirection(tview.FlexRow)
 
 	editArea := tview.NewBox()

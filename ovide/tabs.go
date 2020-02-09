@@ -81,3 +81,16 @@ func (t *Tabs) SelectTab(Id string) bool {
 	}
 	return false
 }
+
+func (t *Tabs) CloseTab(Id string) bool {
+	for i, tab := range t.Tabs {
+		if tab.Id == Id {
+			t.Tabs = append(t.Tabs[:i], t.Tabs[i+1:]...)
+			t.RemoveItem(tab.Item)
+			t.updateLabels()
+			return true
+		}
+	}
+	return false
+
+}

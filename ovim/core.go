@@ -83,6 +83,7 @@ main:
 					c.UI.SetError("Could not save: " + err.Error())
 				}
 			case *QuitEvent:
+				log.Printf("QuitEvent %v", e.Force)
 				if c.Editor.Buffer.Modified && !e.Force {
 					c.UI.SetError("Unsaved changes, please save first or use q!")
 				} else {

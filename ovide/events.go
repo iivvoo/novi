@@ -20,3 +20,7 @@ type NewFileEvent struct {
 type NewFolderEvent struct {
 	ParentFolder string
 }
+
+type CloseTabEvent struct {
+	FullPath string
+}

@@ -63,16 +63,19 @@ func (o *UIWrapper) SetStatus(status string) {
 func (o *UIWrapper) SetError(string) {
 }
 
-func NewCore(name string, editor *ovim.Editor) *Ovi {
+func NewCore(fullpath string, editor *ovim.Editor, ch chan IDEEvent) *Ovi {
 	emu := viemu.NewVi(editor)
-	prim := NewOviPrimitive(editor, name).(*Ovi)
+	prim := NewOviPrimitive(editor).(*Ovi)
 	ui := &UIWrapper{
 		prim: prim,
 	}
 
 	c := ovim.NewCore(editor, ui, emu)
 
-	go c.Loop()
+	go func() {
+		c.Loop()
+		ch <- &CloseTabEvent{FullPath: fullpath}
+	}()
 	return prim
 }
 
@@ -120,7 +123,8 @@ func Run() {
 					editor.LoadFile(e.FullPath)
 					editor.SetCursor(0, 0)
 
-					prim := NewCore(e.Filename, editor)
+					// pass a more generic tab id in stead of full path?
+					prim := NewCore(e.FullPath, editor, c)
 
 					app.SetFocus(tabs.AddTab(e.FullPath, e.Filename, prim))
 					log.Println("Done opening tab")
@@ -134,7 +138,8 @@ func Run() {
 							editor.LoadFile(p)
 							editor.SetCursor(0, 0)
 
-							prim := NewCore(s, editor)
+							// pass a more generic tab id in stead of full path?
+							prim := NewCore(p, editor, c)
 
 							app.SetFocus(tabs.AddTab(p, s, prim))
 							nav.ClearPlaceHolder()
@@ -144,7 +149,13 @@ func Run() {
 						SetCancel(func(s string) {
 							nav.ClearPlaceHolder()
 						})
-
+				case *CloseTabEvent:
+					tabs.CloseTab(e.FullPath)
+					log.Printf("Tab %s closed", e.FullPath)
+					// XXX further cleanup?
+					// Focus other tab (previously selected - keep track)
+					// if no tabs, select Tree
+					app.SetFocus(nav)
 				case *DebugEvent:
 					fmt.Fprintln(debug, e.Msg)
 				case *QuitEvent:

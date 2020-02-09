@@ -14,6 +14,8 @@ import (
  * insert: iIoOaA OK (single cursor)
  * D - delete (+ insert) to EOL
  * C - change to EOL
+ * Cg Dg - change/delete till eof
+
  * regular <enter> in insert mode OK
  * HML - high / middle / low (screen, niet file)
  * vi scrolls few lines before top/bottom, not at
