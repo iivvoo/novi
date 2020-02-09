@@ -23,7 +23,7 @@ type Ovi struct {
 	statusArea *tview.TextView
 	Source     ovim.InputSource
 	c          chan ovim.Event
-	pos        int
+	InputPos   int
 }
 
 func NewOviPrimitive(e *ovim.Editor, name string) tview.Primitive {
@@ -43,7 +43,7 @@ func NewOviPrimitive(e *ovim.Editor, name string) tview.Primitive {
 		statusArea: statusArea,
 		Source:     MainSource,
 		c:          nil,
-		pos:        -1}
+		InputPos:   -1}
 
 	editArea.SetDrawFunc(o.TviewRender)
 	editArea.SetInputCapture(o.HandleInput)
@@ -92,19 +92,20 @@ func (o *Ovi) TviewRender(screen tcell.Screen, xx, yy, width, height int) (int, 
 		}
 		y++
 	}
-	// To make the cursor blink, show/hide it?
-	for _, cursor := range o.Editor.Cursors {
-		if cursor.Line != -1 {
-			screen.ShowCursor(xx+cursor.Pos-o.ViewportX, yy+cursor.Line-o.ViewportY)
+	if o.Source == CommandSource {
+		x, y, _, _ := o.statusArea.GetInnerRect()
+		screen.ShowCursor(x+o.InputPos, y)
+	} else {
+		// To make the cursor blink, show/hide it?
+		for _, cursor := range o.Editor.Cursors {
+			if cursor.Line != -1 {
+				screen.ShowCursor(xx+cursor.Pos-o.ViewportX, yy+cursor.Line-o.ViewportY)
+			}
+			// else probably show at (0,0)
 		}
-		// else probably show at (0,0)
 	}
 
 	// A bit hacky: set the cursor on statusArea if it's in input mode
-	if o.pos >= 0 {
-		x, y, _, _ := o.statusArea.GetInnerRect()
-		screen.ShowCursor(x+o.pos, y)
-	}
 	// Leave nothing for other components
 	return 0, 0, 0, 0
 }
@@ -114,7 +115,16 @@ func (o *Ovi) GetDimension() (int, int) {
 	return w, h
 }
 func (o *Ovi) UpdateStatus(status string) {
-	o.statusArea.SetText(status)
+	if o.Source == MainSource {
+		o.statusArea.SetText(status)
+	}
+}
+
+func (o *Ovi) UpdateInput(input string, pos int) {
+	if o.Source == CommandSource {
+		o.statusArea.SetText(input)
+		o.InputPos = pos
+	}
 }
 
 func (o *Ovi) HandleInput(event *tcell.EventKey) *tcell.EventKey {
@@ -122,10 +132,6 @@ func (o *Ovi) HandleInput(event *tcell.EventKey) *tcell.EventKey {
 		e.SetSource(o.Source)
 		o.c <- e
 		return nil
-		// if o.Emulation.HandleEvent(0, e) {
-		// 	o.UpdateStatus()
-		// 	return nil
-		// }
 	}
 	return event
 }

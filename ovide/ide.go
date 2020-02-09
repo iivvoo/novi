@@ -35,8 +35,8 @@ func (o *UIWrapper) Finish() {}
 func (o *UIWrapper) Loop(c chan ovim.Event) {
 	o.prim.SetChan(c)
 }
-func (o *UIWrapper) Render() {
 
+func (o *UIWrapper) Render() {
 }
 func (o *UIWrapper) GetDimension() (int, int) {
 	return o.prim.GetDimension()
@@ -44,7 +44,6 @@ func (o *UIWrapper) GetDimension() (int, int) {
 
 func (o *UIWrapper) AskInput(string) ovim.InputSource {
 	// handle keys from status
-	log.Printf("AskInput()")
 	o.command = true
 	o.prim.Source = CommandSource
 
@@ -54,12 +53,10 @@ func (o *UIWrapper) AskInput(string) ovim.InputSource {
 func (o *UIWrapper) CloseInput(ovim.InputSource) {
 	o.command = false
 	o.prim.Source = MainSource
-	o.prim.pos = -1 // XXX
 }
 
 func (o *UIWrapper) UpdateInput(source ovim.InputSource, s string, pos int) {
-	o.prim.statusArea.SetText(":" + s)
-	o.prim.pos = pos + 1
+	o.prim.UpdateInput(":"+s, pos+1)
 }
 
 func (o *UIWrapper) SetStatus(status string) {
