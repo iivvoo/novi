@@ -6,36 +6,27 @@ type Emulation interface {
 	SetChan(chan EmuEvent)
 }
 
-// Don't all UI's need Render()?
-type InputUI interface {
-	AskInput(string) InputSource
-	CloseInput(InputSource)
-	UpdateInput(InputSource, string, int)
-}
-
-type StatusUI interface {
-	SetStatus(string)
-	SetError(string)
-}
-
 type UI interface {
 	Finish()
 	Loop(chan Event)
 	Render()
 	GetDimension() (int, int)
+	AskInput(string) InputSource
+	CloseInput(InputSource)
+	UpdateInput(InputSource, string, int)
+	SetStatus(string)
+	SetError(string)
 }
 
 // Core glues Editor, UI and Emulation together, passing messages along as necessary
 type Core struct {
 	Editor    *Editor
 	UI        UI
-	Input     InputUI
-	Status    StatusUI
 	Emulation Emulation
 }
 
-func NewCore(e *Editor, ui UI, input InputUI, status StatusUI, em Emulation) *Core {
-	return &Core{Editor: e, UI: ui, Input: input, Status: status, Emulation: em}
+func NewCore(e *Editor, ui UI, em Emulation) *Core {
+	return &Core{Editor: e, UI: ui, Emulation: em}
 }
 
 func (c *Core) Loop() {
@@ -53,7 +44,7 @@ main:
 	for {
 		width, _ := c.UI.GetDimension()
 		status := c.Emulation.GetStatus(width)
-		c.Status.SetStatus(status)
+		c.UI.SetStatus(status)
 		c.UI.Render()
 		select {
 
@@ -75,30 +66,30 @@ main:
 			switch e := ev.(type) {
 			// other events we can handle here: quit, save file, open file
 			case *AskInputEvent:
-				id := c.Input.AskInput(e.Prompt)
+				id := c.UI.AskInput(e.Prompt)
 				log.Printf("Received AskInputEvent: %s -> %d", e.Prompt, id)
 				ui2emu[id] = e.ID
 				emu2ui[e.ID] = id
 			case *CloseInputEvent:
 				log.Printf("Core: CloseEvent %d", e.ID)
 				source := emu2ui[e.ID]
-				c.Input.CloseInput(source)
+				c.UI.CloseInput(source)
 			case *UpdateInputEvent:
 				source := emu2ui[e.ID]
-				c.Input.UpdateInput(source, e.Text, e.Pos)
+				c.UI.UpdateInput(source, e.Text, e.Pos)
 			case *SaveEvent:
 				log.Printf("SaveEvent %s %v", e.Name, e.Force)
 				if err := c.Editor.SaveFile(e.Name, e.Force); err != nil {
-					c.Status.SetError("Could not save: " + err.Error())
+					c.UI.SetError("Could not save: " + err.Error())
 				}
 			case *QuitEvent:
 				if c.Editor.Buffer.Modified && !e.Force {
-					c.Status.SetError("Unsaved changes, please save first or use q!")
+					c.UI.SetError("Unsaved changes, please save first or use q!")
 				} else {
 					break main
 				}
 			case *ErrorEvent:
-				c.Status.SetError(e.Message)
+				c.UI.SetError(e.Message)
 				log.Printf("ErrorEvent %s", e.Message)
 			}
 		}

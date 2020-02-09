@@ -40,25 +40,17 @@ func (o *UIWrapper) GetDimension() (int, int) {
 	return o.prim.GetDimension()
 }
 
-type InputUIWrapper struct {
-}
-
-func (i *InputUIWrapper) AskInput(string) ovim.InputSource {
+func (o *UIWrapper) AskInput(string) ovim.InputSource {
 	return 0
 }
-func (i *InputUIWrapper) CloseInput(ovim.InputSource)               {}
-func (i *InputUIWrapper) UpdateInput(ovim.InputSource, string, int) {}
+func (o *UIWrapper) CloseInput(ovim.InputSource)               {}
+func (o *UIWrapper) UpdateInput(ovim.InputSource, string, int) {}
 
-type StatusUIWrapper struct {
-	prim *Ovi
-}
-
-func (o *StatusUIWrapper) SetStatus(status string) {
+func (o *UIWrapper) SetStatus(status string) {
 	o.prim.statusArea.SetText(status)
 
 }
-func (o *StatusUIWrapper) SetError(string) {
-
+func (o *UIWrapper) SetError(string) {
 }
 
 func NewCore(name string, editor *ovim.Editor) *Ovi {
@@ -67,10 +59,8 @@ func NewCore(name string, editor *ovim.Editor) *Ovi {
 	ui := &UIWrapper{
 		prim: prim,
 	}
-	input := &InputUIWrapper{}
-	status := &StatusUIWrapper{prim}
 
-	c := ovim.NewCore(editor, ui, input, status, emu)
+	c := ovim.NewCore(editor, ui, emu)
 
 	go c.Loop()
 	return prim
