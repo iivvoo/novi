@@ -1,6 +1,8 @@
 package ovide
 
 import (
+	"fmt"
+
 	"github.com/gdamore/tcell"
 	"github.com/iivvoo/ovim/ovim"
 	termui "github.com/iivvoo/ovim/ui/term"
@@ -24,6 +26,8 @@ type Ovi struct {
 	Source     ovim.InputSource
 	c          chan ovim.Event
 	InputPos   int
+	statusMsg  string
+	errorMsg   string
 }
 
 func NewOviPrimitive(e *ovim.Editor) tview.Primitive {
@@ -31,6 +35,7 @@ func NewOviPrimitive(e *ovim.Editor) tview.Primitive {
 
 	editArea := tview.NewBox()
 	statusArea := tview.NewTextView()
+	statusArea.SetDynamicColors(true)
 	x.AddItem(editArea, 0, 1, true)
 	x.AddItem(statusArea, 1, 1, false)
 
@@ -115,9 +120,27 @@ func (o *Ovi) GetDimension() (int, int) {
 	return w, h
 }
 func (o *Ovi) UpdateStatus(status string) {
-	if o.Source == MainSource {
-		o.statusArea.SetText(status)
+	if o.Source == MainSource && o.errorMsg == "" {
+		o.statusArea.SetText("[-:-]" + status)
 	}
+	o.statusMsg = status
+}
+
+func (o *Ovi) UpdateError(message string) {
+	// use [xx] coloring
+	o.errorMsg = message
+
+	o.statusArea.SetText(fmt.Sprintf("[white:red]%s[-:-]", message))
+
+	// Not sure how we can properly reset/clear the status - we don't have access
+	// to App, and calling o.UpdateStatus() doesn't have the desired effect
+	// go func() {
+	// 	time.Sleep(time.Second * 3)
+	// 	o.errorMsg = ""
+	// 	o.App.QueueUpdateDraw(func() {
+	// 		o.UpdateStatus(o.statusMsg)
+	// 	})
+	// }()
 }
 
 func (o *Ovi) UpdateInput(input string, pos int) {

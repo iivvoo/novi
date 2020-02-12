@@ -60,7 +60,8 @@ func (o *UIWrapper) SetStatus(status string) {
 	o.prim.UpdateStatus(status)
 }
 
-func (o *UIWrapper) SetError(string) {
+func (o *UIWrapper) SetError(error string) {
+	o.prim.UpdateError(error)
 }
 
 func NewCore(fullpath string, editor *ovim.Editor, ch chan IDEEvent) *Ovi {
