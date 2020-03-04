@@ -69,7 +69,7 @@ func start() {
 	} else {
 		emu = basicemu.NewBasic(editor)
 	}
-	core := ovim.NewCore(editor, ui, ui, ui, emu)
+	core := ovim.NewCore(editor, ui, emu)
 	core.Loop()
 	ui.Finish()
 }
