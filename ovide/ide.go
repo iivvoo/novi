@@ -25,6 +25,7 @@ var log = logger.GetLogger("ovide")
  * - Generic Error Modal (e.g. file create)
  */
 
+// BuildEditor builds/sets up the editor and UI
 func BuildEditor(app *tview.Application, fullpath string, editor *ovim.Editor, ch chan IDEEvent) *Ovi {
 	emu := viemu.NewVi(editor)
 	prim := NewOviPrimitive(editor).(*Ovi)
