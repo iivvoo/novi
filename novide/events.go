@@ -1,4 +1,4 @@
-package ovide
+package novide
 
 type IDEEvent interface{}
 

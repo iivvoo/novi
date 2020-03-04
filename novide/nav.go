@@ -1,4 +1,4 @@
-package ovide
+package novide
 
 import (
 	"io/ioutil"
