@@ -1,6 +1,6 @@
 package viemu
 
-// Line should replace lines in ovim.Buffer at some point
+// Line should replace lines in novi.Buffer at some point
 type Line struct {
 	runes []rune
 }

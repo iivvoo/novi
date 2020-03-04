@@ -7,21 +7,21 @@ import (
 
 	"github.com/gdamore/tcell"
 	"github.com/gdamore/tcell/encoding"
-	"github.com/iivvoo/ovim/logger"
-	"github.com/iivvoo/ovim/ovim"
+	"github.com/iivvoo/novi/logger"
+	"github.com/iivvoo/novi/novi"
 )
 
 var log = logger.GetLogger("termui")
 
 const (
-	MainSource       ovim.InputSource = 0
-	MagicInputSource ovim.InputSource = 31337
+	MainSource       novi.InputSource = 0
+	MagicInputSource novi.InputSource = 31337
 )
 
 type TermUI struct {
 	// internal
 	Screen         tcell.Screen
-	Editor         *ovim.Editor
+	Editor         *novi.Editor
 	ViewportX      int
 	ViewportY      int
 	EditAreaWidth  int
@@ -33,13 +33,13 @@ type TermUI struct {
 	Error  string
 
 	// extra input support
-	Source   ovim.InputSource
+	Source   novi.InputSource
 	inputPos int
 	prompt   string
 	input    string
 }
 
-func NewTermUI(Editor *ovim.Editor) *TermUI {
+func NewTermUI(Editor *novi.Editor) *TermUI {
 	s, e := tcell.NewScreen()
 	if e != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", e)
@@ -78,7 +78,7 @@ func (t *TermUI) Finish() {
 	t.Screen.Fini()
 }
 
-func (t *TermUI) AskInput(prompt string) ovim.InputSource {
+func (t *TermUI) AskInput(prompt string) novi.InputSource {
 	if t.Source == MagicInputSource {
 		log.Println("term ui doesn't support more than one additional input!")
 		return -1
@@ -90,19 +90,19 @@ func (t *TermUI) AskInput(prompt string) ovim.InputSource {
 	return MagicInputSource
 }
 
-func (t *TermUI) CloseInput(source ovim.InputSource) {
+func (t *TermUI) CloseInput(source novi.InputSource) {
 	t.input = ""
 	t.Source = MainSource
 }
 
-func (t *TermUI) UpdateInput(source ovim.InputSource, s string, pos int) {
+func (t *TermUI) UpdateInput(source novi.InputSource, s string, pos int) {
 	t.input = s
 	t.inputPos = len(t.prompt) + pos
 }
 
-func (t *TermUI) Loop(c chan ovim.Event) {
+func (t *TermUI) Loop(c chan novi.Event) {
 	go func() {
-		defer ovim.RecoverFromPanic(func() {
+		defer novi.RecoverFromPanic(func() {
 			t.Finish()
 		})
 		for {

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/iivvoo/ovim/logger"
-	"github.com/iivvoo/ovim/ovim"
+	"github.com/iivvoo/novi/logger"
+	"github.com/iivvoo/novi/novi"
 )
 
 /*
@@ -50,24 +50,24 @@ const (
 )
 
 // MainInputID identifies input from the main editing area
-const MainInputID ovim.InputID = 0
+const MainInputID novi.InputID = 0
 
 // ExInputID identifies the ex command input
-const ExInputID ovim.InputID = 1
+const ExInputID novi.InputID = 1
 
 // DispatchHandler is the signature for a handler in the dispatch table
-type DispatchHandler func(ovim.Event) bool
+type DispatchHandler func(novi.Event) bool
 
 // Dispatch maps a Key/CharacterEvent to a handler
 type Dispatch struct {
 	Mode    ViMode
-	Event   ovim.Event
-	Events  []ovim.Event
+	Event   novi.Event
+	Events  []novi.Event
 	Handler DispatchHandler
 }
 
 // Do calls the handler if the event matches
-func (d Dispatch) Do(event ovim.Event, mode ViMode) bool {
+func (d Dispatch) Do(event novi.Event, mode ViMode) bool {
 	if event.Equals(d.Event) && (d.Mode == ModeAny || d.Mode == mode) {
 		return d.Handler(event)
 	}
@@ -81,14 +81,14 @@ func (d Dispatch) Do(event ovim.Event, mode ViMode) bool {
 
 // Vi encapsulate all the Vi emulation state
 type Vi struct {
-	Editor        *ovim.Editor
+	Editor        *novi.Editor
 	Mode          ViMode
 	CommandBuffer string
 	Counter       int
 
 	ex       *Ex
 	dispatch []Dispatch
-	c        chan ovim.EmuEvent
+	c        chan novi.EmuEvent
 }
 
 /*
@@ -114,71 +114,71 @@ type Vi struct {
  */
 
 // NewVi creates/setups up a new Vi emulation instance
-func NewVi(e *ovim.Editor) *Vi {
+func NewVi(e *novi.Editor) *Vi {
 	em := &Vi{Editor: e, Mode: ModeCommand, ex: NewEx()}
 	dispatch := []Dispatch{
-		Dispatch{Mode: ModeCommand, Event: &ovim.CharacterEvent{Rune: ':'}, Handler: em.HandleToExCommand},
-		Dispatch{Mode: ModeEdit, Event: &ovim.KeyEvent{Key: ovim.KeyEscape}, Handler: em.HandleToModeCommand},
-		Dispatch{Mode: ModeCommand, Event: &ovim.KeyEvent{Key: ovim.KeyEscape}, Handler: em.HandleCommandClear},
-		Dispatch{Mode: ModeCommand, Event: &ovim.KeyEvent{Key: ovim.KeyEnter}, Handler: em.HandleCommandEnter},
-		Dispatch{Mode: ModeEdit, Event: &ovim.KeyEvent{Key: ovim.KeyEnter}, Handler: em.HandleEditEnter},
-		Dispatch{Mode: ModeCommand, Events: []ovim.Event{
-			&ovim.CharacterEvent{Rune: 'i'},
-			&ovim.CharacterEvent{Rune: 'I'},
-			&ovim.CharacterEvent{Rune: 'o'},
-			&ovim.CharacterEvent{Rune: 'O'},
-			&ovim.CharacterEvent{Rune: 'a'},
-			&ovim.CharacterEvent{Rune: 'A'},
+		Dispatch{Mode: ModeCommand, Event: &novi.CharacterEvent{Rune: ':'}, Handler: em.HandleToExCommand},
+		Dispatch{Mode: ModeEdit, Event: &novi.KeyEvent{Key: novi.KeyEscape}, Handler: em.HandleToModeCommand},
+		Dispatch{Mode: ModeCommand, Event: &novi.KeyEvent{Key: novi.KeyEscape}, Handler: em.HandleCommandClear},
+		Dispatch{Mode: ModeCommand, Event: &novi.KeyEvent{Key: novi.KeyEnter}, Handler: em.HandleCommandEnter},
+		Dispatch{Mode: ModeEdit, Event: &novi.KeyEvent{Key: novi.KeyEnter}, Handler: em.HandleEditEnter},
+		Dispatch{Mode: ModeCommand, Events: []novi.Event{
+			&novi.CharacterEvent{Rune: 'i'},
+			&novi.CharacterEvent{Rune: 'I'},
+			&novi.CharacterEvent{Rune: 'o'},
+			&novi.CharacterEvent{Rune: 'O'},
+			&novi.CharacterEvent{Rune: 'a'},
+			&novi.CharacterEvent{Rune: 'A'},
 		}, Handler: em.HandleInsertionKeys},
 
-		Dispatch{Mode: ModeAny, Events: []ovim.Event{
-			&ovim.KeyEvent{Key: ovim.KeyLeft},
-			&ovim.KeyEvent{Key: ovim.KeyRight},
-			&ovim.KeyEvent{Key: ovim.KeyUp},
-			&ovim.KeyEvent{Key: ovim.KeyDown},
-			&ovim.KeyEvent{Key: ovim.KeyEnd},
-			&ovim.KeyEvent{Key: ovim.KeyHome},
+		Dispatch{Mode: ModeAny, Events: []novi.Event{
+			&novi.KeyEvent{Key: novi.KeyLeft},
+			&novi.KeyEvent{Key: novi.KeyRight},
+			&novi.KeyEvent{Key: novi.KeyUp},
+			&novi.KeyEvent{Key: novi.KeyDown},
+			&novi.KeyEvent{Key: novi.KeyEnd},
+			&novi.KeyEvent{Key: novi.KeyHome},
 		}, Handler: em.HandleMoveCursors},
-		Dispatch{Mode: ModeAny, Events: []ovim.Event{
-			&ovim.KeyEvent{Key: ovim.KeyBackspace},
-			&ovim.KeyEvent{Key: ovim.KeyDelete},
+		Dispatch{Mode: ModeAny, Events: []novi.Event{
+			&novi.KeyEvent{Key: novi.KeyBackspace},
+			&novi.KeyEvent{Key: novi.KeyDelete},
 		}, Handler: em.HandleBackspace},
 		// Sort of a generic fallthrough handler - handles commands in command mode
-		Dispatch{Mode: ModeCommand, Event: &ovim.CharacterEvent{}, Handler: em.HandleCommandBuffer},
-		Dispatch{Mode: ModeEdit, Event: &ovim.CharacterEvent{}, Handler: em.HandleAnyRune},
+		Dispatch{Mode: ModeCommand, Event: &novi.CharacterEvent{}, Handler: em.HandleCommandBuffer},
+		Dispatch{Mode: ModeEdit, Event: &novi.CharacterEvent{}, Handler: em.HandleAnyRune},
 	}
 	em.dispatch = dispatch
 	return em
 }
 
 // SetChan sets up a channel for communiction with the core
-func (em *Vi) SetChan(c chan ovim.EmuEvent) {
+func (em *Vi) SetChan(c chan novi.EmuEvent) {
 	em.c = c
 }
 
 // HandleToExCommand handles the ':' ex command input
-func (em *Vi) HandleToExCommand(ev ovim.Event) bool {
+func (em *Vi) HandleToExCommand(ev novi.Event) bool {
 	em.ex.Clear()
-	em.c <- &ovim.AskInputEvent{ID: ExInputID, Prompt: ":"}
+	em.c <- &novi.AskInputEvent{ID: ExInputID, Prompt: ":"}
 	return true
 }
 
 // HandleCommandEnter handles enter in command mode
-func (em *Vi) HandleCommandEnter(ev ovim.Event) bool {
+func (em *Vi) HandleCommandEnter(ev novi.Event) bool {
 	for _, c := range em.Editor.Cursors {
-		em.Move(c, ovim.CursorDown)
-		em.Move(c, ovim.CursorBegin)
+		em.Move(c, novi.CursorDown)
+		em.Move(c, novi.CursorBegin)
 	}
 	return true
 }
 
 // HandleEditEnter handles enter in insert mode
-func (em *Vi) HandleEditEnter(ev ovim.Event) bool {
+func (em *Vi) HandleEditEnter(ev novi.Event) bool {
 	// XXX identical to "basic" emulation
 	for _, c := range em.Editor.Cursors {
 		em.Editor.Buffer.SplitLine(c)
-		em.Move(c, ovim.CursorDown)
-		em.Move(c, ovim.CursorBegin)
+		em.Move(c, novi.CursorDown)
+		em.Move(c, novi.CursorBegin)
 		// update all cursors after
 		for _, ca := range em.Editor.Cursors.After(c) {
 			ca.Line++
@@ -188,34 +188,34 @@ func (em *Vi) HandleEditEnter(ev ovim.Event) bool {
 }
 
 // HandleBackspace handles backspace behaviour in both edit and command mode
-func (em *Vi) HandleBackspace(ev ovim.Event) bool {
+func (em *Vi) HandleBackspace(ev novi.Event) bool {
 	// BUG: vim seems to allow counts on backspace in commandmode,
 	// e.g. 10<backspace>, so it should be handled there
 	if em.Mode == ModeCommand {
 		for _, c := range em.Editor.Cursors {
 			if c.Pos == 0 && c.Line != 0 {
-				em.Move(c, ovim.CursorUp)
-				em.Move(c, ovim.CursorEnd)
+				em.Move(c, novi.CursorUp)
+				em.Move(c, novi.CursorEnd)
 			} else {
-				em.Move(c, ovim.CursorLeft)
+				em.Move(c, novi.CursorLeft)
 			}
 		}
 	} else {
 		for _, c := range em.Editor.Cursors {
 			if c.Pos > 0 {
 				em.Editor.Buffer.RemoveRuneBeforeCursor(c)
-				em.Move(c, ovim.CursorLeft)
+				em.Move(c, novi.CursorLeft)
 			} else {
 				// identical to basic emulation XXX
 				l := c.Line
-				em.Move(c, ovim.CursorUp)
-				em.Move(c, ovim.CursorEnd)
+				em.Move(c, novi.CursorUp)
+				em.Move(c, novi.CursorEnd)
 				em.Editor.Buffer.JoinLineWithPrevious(l)
 				// except here, since "End" in vi moves to the last character, not past it, for which we need to compensate
-				em.Move(c, ovim.CursorRight)
+				em.Move(c, novi.CursorRight)
 
 				for _, cc := range em.Editor.Cursors.After(c) {
-					em.Move(cc, ovim.CursorUp)
+					em.Move(cc, novi.CursorUp)
 				}
 			}
 		}
@@ -224,7 +224,7 @@ func (em *Vi) HandleBackspace(ev ovim.Event) bool {
 }
 
 // HandleCommandClear clears the current command state (if any)
-func (em *Vi) HandleCommandClear(ev ovim.Event) bool {
+func (em *Vi) HandleCommandClear(ev novi.Event) bool {
 	em.CommandBuffer = ""
 	return true
 }
@@ -234,7 +234,7 @@ func (em *Vi) RemoveCharacters(howmany int, before bool) {
 	for _, c := range em.Editor.Cursors {
 		em.Editor.Buffer.RemoveCharacters(c, before, howmany)
 		if before {
-			em.MoveMany(c, ovim.CursorLeft, howmany)
+			em.MoveMany(c, novi.CursorLeft, howmany)
 		}
 	}
 }
@@ -246,7 +246,7 @@ func (em *Vi) RemoveLines(howmany int) {
 	for i := 0; i < howmany; i++ {
 		if !em.Editor.Buffer.RemoveLine(first.Line) {
 			// We ran out of lines, no need to continue, but do move up
-			em.Move(first, ovim.CursorUp)
+			em.Move(first, novi.CursorUp)
 			break
 		}
 	}
@@ -260,14 +260,14 @@ func (em *Vi) JumpStartEndLine(howmany int, jumpstart bool) {
 			// howmany has no meaning
 			c.Pos = 0
 		} else {
-			em.MoveMany(c, ovim.CursorDown, howmany-1)
-			em.Move(c, ovim.CursorEnd)
+			em.MoveMany(c, novi.CursorDown, howmany-1)
+			em.Move(c, novi.CursorEnd)
 		}
 	}
 }
 
 // HandleEvent is the main entry point
-func (em *Vi) HandleEvent(id ovim.InputID, event ovim.Event) bool {
+func (em *Vi) HandleEvent(id novi.InputID, event novi.Event) bool {
 	if id == ExInputID {
 		return em.HandleExInput(event)
 	}
@@ -283,37 +283,37 @@ func (em *Vi) HandleEvent(id ovim.InputID, event ovim.Event) bool {
 }
 
 // HandleInsertionKeys handles the different switches to insert mode
-func (em *Vi) HandleInsertionKeys(ev ovim.Event) bool {
+func (em *Vi) HandleInsertionKeys(ev novi.Event) bool {
 	em.Mode = ModeEdit
 
-	r := ev.(*ovim.CharacterEvent).Rune
+	r := ev.(*novi.CharacterEvent).Rune
 	first := em.Editor.Cursors[0]
 
 	switch r {
 	case 'i': // just insert at current cursor position
 		break
 	case 'I': // insert at beginning of line
-		em.Move(first, ovim.CursorBegin)
+		em.Move(first, novi.CursorBegin)
 	case 'o': // add line below current line
 		// XXX TODO preserve indent (depend on indent mode?)
 		em.Editor.Buffer.InsertLine(first, "", false)
-		em.Move(first, ovim.CursorDown)
+		em.Move(first, novi.CursorDown)
 	case 'O': // add line above cursor
 		// XXX TODO preserve indent (depend on indent mode?)
 		em.Editor.Buffer.InsertLine(first, "", true)
 		// The cursor will already be at the inserted line, but may need to move to the start
-		em.Move(first, ovim.CursorBegin)
+		em.Move(first, novi.CursorBegin)
 	case 'a': // after cursor
-		em.Move(first, ovim.CursorRight)
+		em.Move(first, novi.CursorRight)
 	case 'A': // at end
-		em.Move(first, ovim.CursorEnd)
+		em.Move(first, novi.CursorEnd)
 		first.Pos++
 	}
 	return true
 }
 
 // HandleToModeCommand simply switches (back) to command mode
-func (em *Vi) HandleToModeCommand(ovim.Event) bool {
+func (em *Vi) HandleToModeCommand(novi.Event) bool {
 	em.Mode = ModeCommand
 	// Make sure no cursors are past the end
 	for _, c := range em.Editor.Cursors {
@@ -325,8 +325,8 @@ func (em *Vi) HandleToModeCommand(ovim.Event) bool {
 }
 
 // HandleAnyRune simply inserts the character in edit mode
-func (em *Vi) HandleAnyRune(ev ovim.Event) bool {
-	r := ev.(*ovim.CharacterEvent).Rune
+func (em *Vi) HandleAnyRune(ev novi.Event) bool {
+	r := ev.(*novi.CharacterEvent).Rune
 	em.Editor.Buffer.PutRuneAtCursors(em.Editor.Cursors, r)
 	for _, c := range em.Editor.Cursors {
 		// Move(CursorRight) won't do since it will restrict to the last character
@@ -369,9 +369,9 @@ func (em *Vi) ReplaceDeleteWords(howmany int, change bool) {
 }
 
 // HandleCommandBuffer handles all keys that affect the command buffer
-func (em *Vi) HandleCommandBuffer(ev ovim.Event) bool {
+func (em *Vi) HandleCommandBuffer(ev novi.Event) bool {
 	commands := "BbcdeEgGhjklxXdwWZQ0123456789$^"
-	r := ev.(*ovim.CharacterEvent).Rune
+	r := ev.(*novi.CharacterEvent).Rune
 
 	if strings.IndexRune(commands, r) != -1 {
 		em.CommandBuffer += string(r)
@@ -413,11 +413,11 @@ func (em *Vi) CheckExecuteCommandBuffer() bool {
 		em.JumpStartEndLine(count, command == "^")
 		em.CommandBuffer = ""
 	case "ZZ":
-		em.c <- &ovim.SaveEvent{}
-		em.c <- &ovim.QuitEvent{}
+		em.c <- &novi.SaveEvent{}
+		em.c <- &novi.QuitEvent{}
 		em.CommandBuffer = ""
 	case "ZQ":
-		em.c <- &ovim.QuitEvent{Force: true}
+		em.c <- &novi.QuitEvent{Force: true}
 		em.CommandBuffer = ""
 		return false // signals exit
 	case "dd":
@@ -466,7 +466,7 @@ func (em *Vi) JumpTopBottom(howmany int, jumptop bool) {
 		if howmany > 1 {
 			c.Line = 0
 			c.Pos = 0
-			em.MoveMany(c, ovim.CursorDown, howmany-1)
+			em.MoveMany(c, novi.CursorDown, howmany-1)
 		} else if jumptop {
 			// this will move all cursors to (0,0) -- remove them?
 			c.Line = 0

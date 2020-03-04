@@ -2,89 +2,89 @@ package termui
 
 import (
 	"github.com/gdamore/tcell"
-	"github.com/iivvoo/ovim/ovim"
+	"github.com/iivvoo/novi/novi"
 )
 
-var KeyMap = map[tcell.Key]ovim.KeyType{
+var KeyMap = map[tcell.Key]novi.KeyType{
 	// KeyBackspace2 is the 0x7F variant that's a regular character but > ' '
-	tcell.KeyBackspace2: ovim.KeyBackspace,
-	tcell.KeyEsc:        ovim.KeyEscape,
-	tcell.KeyEnter:      ovim.KeyEnter,
-	tcell.KeyUp:         ovim.KeyUp,
-	tcell.KeyDown:       ovim.KeyDown,
-	tcell.KeyLeft:       ovim.KeyLeft,
-	tcell.KeyRight:      ovim.KeyRight,
-	tcell.KeyHome:       ovim.KeyHome,
-	tcell.KeyEnd:        ovim.KeyEnd,
-	tcell.KeyPgUp:       ovim.KeyPgUp,
-	tcell.KeyPgDn:       ovim.KeyPgDn,
-	tcell.KeyBackspace:  ovim.KeyBackspace,
-	tcell.KeyTab:        ovim.KeyTab,
-	tcell.KeyDelete:     ovim.KeyDelete,
-	tcell.KeyInsert:     ovim.KeyInsert,
-	tcell.KeyF1:         ovim.KeyF1,
-	tcell.KeyF2:         ovim.KeyF2,
-	tcell.KeyF3:         ovim.KeyF3,
-	tcell.KeyF4:         ovim.KeyF4,
-	tcell.KeyF5:         ovim.KeyF5,
-	tcell.KeyF6:         ovim.KeyF6,
-	tcell.KeyF7:         ovim.KeyF7,
-	tcell.KeyF8:         ovim.KeyF8,
-	tcell.KeyF9:         ovim.KeyF9,
-	tcell.KeyF10:        ovim.KeyF10,
-	tcell.KeyF11:        ovim.KeyF11,
-	tcell.KeyF12:        ovim.KeyF12,
+	tcell.KeyBackspace2: novi.KeyBackspace,
+	tcell.KeyEsc:        novi.KeyEscape,
+	tcell.KeyEnter:      novi.KeyEnter,
+	tcell.KeyUp:         novi.KeyUp,
+	tcell.KeyDown:       novi.KeyDown,
+	tcell.KeyLeft:       novi.KeyLeft,
+	tcell.KeyRight:      novi.KeyRight,
+	tcell.KeyHome:       novi.KeyHome,
+	tcell.KeyEnd:        novi.KeyEnd,
+	tcell.KeyPgUp:       novi.KeyPgUp,
+	tcell.KeyPgDn:       novi.KeyPgDn,
+	tcell.KeyBackspace:  novi.KeyBackspace,
+	tcell.KeyTab:        novi.KeyTab,
+	tcell.KeyDelete:     novi.KeyDelete,
+	tcell.KeyInsert:     novi.KeyInsert,
+	tcell.KeyF1:         novi.KeyF1,
+	tcell.KeyF2:         novi.KeyF2,
+	tcell.KeyF3:         novi.KeyF3,
+	tcell.KeyF4:         novi.KeyF4,
+	tcell.KeyF5:         novi.KeyF5,
+	tcell.KeyF6:         novi.KeyF6,
+	tcell.KeyF7:         novi.KeyF7,
+	tcell.KeyF8:         novi.KeyF8,
+	tcell.KeyF9:         novi.KeyF9,
+	tcell.KeyF10:        novi.KeyF10,
+	tcell.KeyF11:        novi.KeyF11,
+	tcell.KeyF12:        novi.KeyF12,
 }
 
 type DecomposedKey struct {
-	Modifier ovim.KeyModifier
-	Key      ovim.KeyType
+	Modifier novi.KeyModifier
+	Key      novi.KeyType
 	Rune     rune
 }
 
 var DecomposeMap = map[tcell.Key]DecomposedKey{
-	tcell.KeyCtrlSpace: DecomposedKey{ovim.ModCtrl, ovim.KeyRune, ' '},
-	tcell.KeyCtrlA:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'a'},
-	tcell.KeyCtrlB:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'b'},
-	tcell.KeyCtrlC:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'c'},
-	tcell.KeyCtrlD:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'd'},
-	tcell.KeyCtrlE:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'e'},
-	tcell.KeyCtrlF:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'f'},
-	tcell.KeyCtrlG:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'g'},
-	tcell.KeyCtrlH:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'h'},
-	tcell.KeyCtrlI:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'i'},
-	tcell.KeyCtrlJ:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'j'},
-	tcell.KeyCtrlK:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'k'},
-	tcell.KeyCtrlL:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'l'},
-	tcell.KeyCtrlM:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'm'},
-	tcell.KeyCtrlN:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'n'},
-	tcell.KeyCtrlO:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'o'},
-	tcell.KeyCtrlP:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'p'},
-	tcell.KeyCtrlQ:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'q'},
-	tcell.KeyCtrlR:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'r'},
-	tcell.KeyCtrlS:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 's'},
-	tcell.KeyCtrlT:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 't'},
-	tcell.KeyCtrlU:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'u'},
-	tcell.KeyCtrlV:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'v'},
-	tcell.KeyCtrlW:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'w'},
-	tcell.KeyCtrlX:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'x'},
-	tcell.KeyCtrlY:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'y'},
-	tcell.KeyCtrlZ:     DecomposedKey{ovim.ModCtrl, ovim.KeyRune, 'z'},
+	tcell.KeyCtrlSpace: DecomposedKey{novi.ModCtrl, novi.KeyRune, ' '},
+	tcell.KeyCtrlA:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'a'},
+	tcell.KeyCtrlB:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'b'},
+	tcell.KeyCtrlC:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'c'},
+	tcell.KeyCtrlD:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'd'},
+	tcell.KeyCtrlE:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'e'},
+	tcell.KeyCtrlF:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'f'},
+	tcell.KeyCtrlG:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'g'},
+	tcell.KeyCtrlH:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'h'},
+	tcell.KeyCtrlI:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'i'},
+	tcell.KeyCtrlJ:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'j'},
+	tcell.KeyCtrlK:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'k'},
+	tcell.KeyCtrlL:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'l'},
+	tcell.KeyCtrlM:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'm'},
+	tcell.KeyCtrlN:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'n'},
+	tcell.KeyCtrlO:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'o'},
+	tcell.KeyCtrlP:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'p'},
+	tcell.KeyCtrlQ:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'q'},
+	tcell.KeyCtrlR:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'r'},
+	tcell.KeyCtrlS:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 's'},
+	tcell.KeyCtrlT:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 't'},
+	tcell.KeyCtrlU:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'u'},
+	tcell.KeyCtrlV:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'v'},
+	tcell.KeyCtrlW:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'w'},
+	tcell.KeyCtrlX:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'x'},
+	tcell.KeyCtrlY:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'y'},
+	tcell.KeyCtrlZ:     DecomposedKey{novi.ModCtrl, novi.KeyRune, 'z'},
 	// ctrl-Escape, according to tcell?
-	tcell.KeyCtrlLeftSq:    DecomposedKey{ovim.ModCtrl, ovim.KeyEscape, ' '},
-	tcell.KeyCtrlBackslash: DecomposedKey{ovim.ModCtrl, ovim.KeyRune, '\\'},
-	// tcell.KeyCtrlRightSq:    DecomposedKey{ovim.ModCtrl, ovim.KeyRune, ' '},
-	tcell.KeyCtrlCarat:      DecomposedKey{ovim.ModCtrl, ovim.KeyRune, '^'},
-	tcell.KeyCtrlUnderscore: DecomposedKey{ovim.ModCtrl, ovim.KeyRune, '_'},
+	tcell.KeyCtrlLeftSq:    DecomposedKey{novi.ModCtrl, novi.KeyEscape, ' '},
+	tcell.KeyCtrlBackslash: DecomposedKey{novi.ModCtrl, novi.KeyRune, '\\'},
+	// tcell.KeyCtrlRightSq:    DecomposedKey{novi.ModCtrl, novi.KeyRune, ' '},
+	tcell.KeyCtrlCarat:      DecomposedKey{novi.ModCtrl, novi.KeyRune, '^'},
+	tcell.KeyCtrlUnderscore: DecomposedKey{novi.ModCtrl, novi.KeyRune, '_'},
 }
 
-func MapTCellKey(ev *tcell.EventKey) ovim.Event {
+func MapTCellKey(ev *tcell.EventKey) novi.Event {
 	/*
 	   type EventKey struct {
-	   	t   time.Time
-	   	mod ModMask
-	   	key Key
-	   	ch  rune
+	       t   time.Time
+	       mod ModMask
+	       key Key
+	       ch  rune
 	   }
 
 	   rune = character, mod=alt, shift, etc
@@ -103,11 +103,11 @@ func MapTCellKey(ev *tcell.EventKey) ovim.Event {
 
 	*/
 	key := ev.Key()
-	if ovimKey, ok := KeyMap[key]; ok {
-		return &ovim.KeyEvent{Key: ovimKey}
+	if noviKey, ok := KeyMap[key]; ok {
+		return &novi.KeyEvent{Key: noviKey}
 	} else if decomposed, ok := DecomposeMap[key]; ok {
-		return &ovim.KeyEvent{Modifier: decomposed.Modifier, Key: decomposed.Key, Rune: decomposed.Rune}
+		return &novi.KeyEvent{Modifier: decomposed.Modifier, Key: decomposed.Key, Rune: decomposed.Rune}
 	} else {
-		return &ovim.CharacterEvent{Rune: ev.Rune()}
+		return &novi.CharacterEvent{Rune: ev.Rune()}
 	}
 }

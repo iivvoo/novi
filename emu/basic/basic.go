@@ -3,8 +3,8 @@ package basicemu
 import (
 	"fmt"
 
-	"github.com/iivvoo/ovim/logger"
-	"github.com/iivvoo/ovim/ovim"
+	"github.com/iivvoo/novi/logger"
+	"github.com/iivvoo/novi/novi"
 )
 
 var log = logger.GetLogger("basicemu")
@@ -27,17 +27,17 @@ var log = logger.GetLogger("basicemu")
 
 // The Basic struct encapsulates all state for the Basic Editing emulation
 type Basic struct {
-	Editor *ovim.Editor
+	Editor *novi.Editor
 
-	c chan ovim.EmuEvent
+	c chan novi.EmuEvent
 }
 
-func NewBasic(e *ovim.Editor) *Basic {
+func NewBasic(e *novi.Editor) *Basic {
 	return &Basic{Editor: e}
 }
 
 // SetChan passes us a channel to communicate with the core.
-func (em *Basic) SetChan(c chan ovim.EmuEvent) {
+func (em *Basic) SetChan(c chan novi.EmuEvent) {
 	em.c = c
 }
 
@@ -55,19 +55,19 @@ func (em *Basic) Backspace() {
 	for _, c := range em.Editor.Cursors {
 		if c.Pos > 0 {
 			em.Editor.Buffer.RemoveRuneBeforeCursor(c)
-			Move(c, ovim.CursorLeft)
+			Move(c, novi.CursorLeft)
 		} else if c.Line > 0 {
 			// first move the cursor so we can use CursorEnd to move to the desired position
 			l := c.Line
-			Move(c, ovim.CursorUp)
-			Move(c, ovim.CursorEnd)
+			Move(c, novi.CursorUp)
+			Move(c, novi.CursorEnd)
 			em.Editor.Buffer.JoinLineWithPrevious(l)
 
 			// adjust all other cursors that are on/after l
 			// XXX Untested
 			// XXX also wrong, also changes cursors *before* line.
 			for _, cc := range em.Editor.Cursors.After(c) {
-				Move(cc, ovim.CursorUp)
+				Move(cc, novi.CursorUp)
 			}
 		}
 	}
@@ -81,18 +81,18 @@ func (em *Basic) Backspace() {
  *
  * Also, who is in charge of updating the cursor(s)?
  */
-func (em *Basic) HandleEvent(_ ovim.InputID, event ovim.Event) bool {
+func (em *Basic) HandleEvent(_ novi.InputID, event novi.Event) bool {
 	switch ev := event.(type) {
-	case *ovim.KeyEvent:
+	case *novi.KeyEvent:
 		// control keys, purely control
-		if ev.Modifier == ovim.ModCtrl {
+		if ev.Modifier == novi.ModCtrl {
 			switch ev.Rune {
 			case 'h':
 				em.Backspace()
 			case 'q':
 				return false
 			case 's':
-				em.c <- &ovim.SaveEvent{}
+				em.c <- &novi.SaveEvent{}
 				log.Println("File saved")
 			default:
 				log.Printf("Don't know what to do with control key %+v %c", ev, ev.Rune)
@@ -100,31 +100,31 @@ func (em *Basic) HandleEvent(_ ovim.InputID, event ovim.Event) bool {
 			// no modifier at all
 		} else if ev.Modifier == 0 {
 			switch ev.Key {
-			case ovim.KeyBackspace, ovim.KeyDelete:
+			case novi.KeyBackspace, novi.KeyDelete:
 				// for cursors on pos 0, join with prev (if any)
 				em.Backspace()
-			case ovim.KeyEnter:
+			case novi.KeyEnter:
 				for _, c := range em.Editor.Cursors {
 					em.Editor.Buffer.SplitLine(c)
-					Move(c, ovim.CursorDown)
-					Move(c, ovim.CursorBegin)
+					Move(c, novi.CursorDown)
+					Move(c, novi.CursorBegin)
 					// update all cursors after
 					for _, ca := range em.Editor.Cursors.After(c) {
 						ca.Line++
 					}
 				}
-			case ovim.KeyLeft, ovim.KeyRight, ovim.KeyUp, ovim.KeyDown, ovim.KeyHome, ovim.KeyEnd:
+			case novi.KeyLeft, novi.KeyRight, novi.KeyUp, novi.KeyDown, novi.KeyHome, novi.KeyEnd:
 				for _, c := range em.Editor.Cursors {
-					Move(c, ovim.CursorMap[ev.Key])
+					Move(c, novi.CursorMap[ev.Key])
 				}
 			default:
 				log.Printf("Don't know what to do with key event %+v", ev)
 			}
 		}
-	case *ovim.CharacterEvent:
+	case *novi.CharacterEvent:
 		em.Editor.Buffer.PutRuneAtCursors(em.Editor.Cursors, ev.Rune)
 		for _, c := range em.Editor.Cursors {
-			Move(c, ovim.CursorRight)
+			Move(c, novi.CursorRight)
 		}
 	default:
 		log.Printf("Don't know what to do with event %+v", ev)

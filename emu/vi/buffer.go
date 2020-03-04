@@ -3,11 +3,11 @@ package viemu
 import (
 	"unicode"
 
-	"github.com/iivvoo/ovim/ovim"
+	"github.com/iivvoo/novi/novi"
 )
 
 /*
- * Contains vi-specific buffer operations, manipulations. If reusable, move to ovim
+ * Contains vi-specific buffer operations, manipulations. If reusable, move to novi
  */
 /*
   w 	Move to next word
@@ -39,7 +39,7 @@ func GetRuneType(r rune) RuneType {
 }
 
 // WordStarts Finds al the "word starts" in a given line
-func WordStarts(l ovim.Line, SepAndAlnum bool) []int {
+func WordStarts(l novi.Line, SepAndAlnum bool) []int {
 	if len(l) == 0 {
 		return []int{0}
 	}
@@ -67,7 +67,7 @@ func WordStarts(l ovim.Line, SepAndAlnum bool) []int {
 // e,g ab123 []=-- or sequences of alphanum *and* non-ws
 // This. is a?!@ sentence...
 //    ^^  ^
-func WordEnds(l ovim.Line, SepAndAlnum bool) []int {
+func WordEnds(l novi.Line, SepAndAlnum bool) []int {
 	if len(l) == 0 {
 		return []int{0}
 	}
@@ -93,7 +93,7 @@ func WordEnds(l ovim.Line, SepAndAlnum bool) []int {
 
 // JumpAlNumSepForward jumps to the start of the next word. alnumSepSame defines if
 // words include separators, or if they count as separate words
-func JumpAlNumSepForward(b *ovim.Buffer, c *ovim.Cursor, alnumSepSame bool) (int, int) {
+func JumpAlNumSepForward(b *novi.Buffer, c *novi.Cursor, alnumSepSame bool) (int, int) {
 	line, pos := c.Line, c.Pos
 
 	for line < b.Length() {
@@ -113,18 +113,18 @@ func JumpAlNumSepForward(b *ovim.Buffer, c *ovim.Cursor, alnumSepSame bool) (int
 }
 
 // JumpForward jumps to the next sequence of alphanum or separators, skipping whitespace
-func JumpForward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
+func JumpForward(b *novi.Buffer, c *novi.Cursor) (int, int) {
 	return JumpAlNumSepForward(b, c, false)
 }
 
 // JumpWordForward implements "W" behaviour, the begining of the next word
-func JumpWordForward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
+func JumpWordForward(b *novi.Buffer, c *novi.Cursor) (int, int) {
 	return JumpAlNumSepForward(b, c, true)
 }
 
 // JumpAlNumSepBackward jumps to the start of the previous word. alnumSepSame defines if
 // words include separators, or if they count as separate words
-func JumpAlNumSepBackward(b *ovim.Buffer, c *ovim.Cursor, alnumSepSame bool) (int, int) {
+func JumpAlNumSepBackward(b *novi.Buffer, c *novi.Cursor, alnumSepSame bool) (int, int) {
 	line, pos := c.Line, c.Pos
 
 	for line >= 0 {
@@ -155,18 +155,18 @@ func JumpAlNumSepBackward(b *ovim.Buffer, c *ovim.Cursor, alnumSepSame bool) (in
 }
 
 // JumpBackward implements "b" behaviour, the beginning of the previous sequence of alphanum or other non-whitespace
-func JumpBackward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
+func JumpBackward(b *novi.Buffer, c *novi.Cursor) (int, int) {
 	return JumpAlNumSepBackward(b, c, false)
 }
 
 // JumpWordBackward implements "B" behaviour, the beginning of the previous word, skipping everything non-alphanum
-func JumpWordBackward(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
+func JumpWordBackward(b *novi.Buffer, c *novi.Cursor) (int, int) {
 	return JumpAlNumSepBackward(b, c, true)
 }
 
 // JumpAlNumSepForwardEnd jumps to the end of the next word. alnumSepSame defines if
 // words include separators, or if they count as separate words
-func JumpAlNumSepForwardEnd(b *ovim.Buffer, c *ovim.Cursor, alnumSepSame bool) (int, int) {
+func JumpAlNumSepForwardEnd(b *novi.Buffer, c *novi.Cursor, alnumSepSame bool) (int, int) {
 	line, pos := c.Line, c.Pos
 
 	for line < b.Length() {
@@ -186,11 +186,11 @@ func JumpAlNumSepForwardEnd(b *ovim.Buffer, c *ovim.Cursor, alnumSepSame bool) (
 }
 
 // JumpForwardEnd implements "b" behaviour, the beginning of the previous sequence of alphanum or other non-whitespace
-func JumpForwardEnd(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
+func JumpForwardEnd(b *novi.Buffer, c *novi.Cursor) (int, int) {
 	return JumpAlNumSepForwardEnd(b, c, false)
 }
 
 // JumpWordForwardEnd implements "B" behaviour, the beginning of the previous word, skipping everything non-alphanum
-func JumpWordForwardEnd(b *ovim.Buffer, c *ovim.Cursor) (int, int) {
+func JumpWordForwardEnd(b *novi.Buffer, c *novi.Cursor) (int, int) {
 	return JumpAlNumSepForwardEnd(b, c, true)
 }

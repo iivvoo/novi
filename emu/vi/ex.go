@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/iivvoo/ovim/ovim"
+	"github.com/iivvoo/novi/novi"
 )
 
 // Input holds the state of a simple input buffer
@@ -123,13 +123,13 @@ func (em *Vi) HandleExCommand() {
 	case "$": // last line of file
 		// Error if any additional arguments
 		if l > 1 {
-			em.c <- &ovim.ErrorEvent{Message: "Extra characters after command"}
+			em.c <- &novi.ErrorEvent{Message: "Extra characters after command"}
 			return
 		}
 		em.JumpTopBottom(0, false)
 	case "w", "wq", "w!", "wq!", "x", "x!":
 		if l > 2 {
-			em.c <- &ovim.ErrorEvent{Message: "Extra characters after command"}
+			em.c <- &novi.ErrorEvent{Message: "Extra characters after command"}
 			return
 		}
 		force := strings.ContainsRune(p, '!')
@@ -138,22 +138,22 @@ func (em *Vi) HandleExCommand() {
 		if l > 1 {
 			fname = parts[1]
 		}
-		em.c <- &ovim.SaveEvent{Name: fname, Force: force}
+		em.c <- &novi.SaveEvent{Name: fname, Force: force}
 		if quit {
-			em.c <- &ovim.QuitEvent{Force: force}
+			em.c <- &novi.QuitEvent{Force: force}
 		}
 	case "q", "q!":
 		if l > 1 {
-			em.c <- &ovim.ErrorEvent{Message: "Extra characters after command"}
+			em.c <- &novi.ErrorEvent{Message: "Extra characters after command"}
 			return
 		}
 		force := strings.ContainsRune(p, '!')
-		em.c <- &ovim.QuitEvent{Force: force}
+		em.c <- &novi.QuitEvent{Force: force}
 	}
 }
 
 // HandleExKey handles non-character "special" keys such as cursor keys, escape, backspace
-func (em *Vi) HandleExKey(e *ovim.KeyEvent) {
+func (em *Vi) HandleExKey(e *novi.KeyEvent) {
 	/*
 	   Left/right: move cursor
 	   backspace: remove characters, escape if empty
@@ -162,35 +162,35 @@ func (em *Vi) HandleExKey(e *ovim.KeyEvent) {
 	   up/down> history (if empty)
 	*/
 	switch e.Key {
-	case ovim.KeyBackspace:
+	case novi.KeyBackspace:
 		if em.ex.input.Len() == 0 {
-			em.c <- &ovim.CloseInputEvent{ID: 1}
+			em.c <- &novi.CloseInputEvent{ID: 1}
 		}
 		em.ex.input.Backspace()
-	case ovim.KeyLeft:
+	case novi.KeyLeft:
 		em.ex.input.CursorLeft()
-	case ovim.KeyRight:
+	case novi.KeyRight:
 		em.ex.input.CursorRight()
-	case ovim.KeyEscape:
+	case novi.KeyEscape:
 		em.ex.Clear()
-		em.c <- &ovim.CloseInputEvent{ID: 1}
+		em.c <- &novi.CloseInputEvent{ID: 1}
 		return
-	case ovim.KeyEnter:
+	case novi.KeyEnter:
 		log.Printf("Handling ex command '%s'", em.ex.input.ToString())
 		em.HandleExCommand()
 		em.ex.Clear()
-		em.c <- &ovim.CloseInputEvent{ID: 1}
+		em.c <- &novi.CloseInputEvent{ID: 1}
 		return
 	}
-	em.c <- &ovim.UpdateInputEvent{ID: 1, Text: em.ex.input.ToString(), Pos: em.ex.input.Pos}
+	em.c <- &novi.UpdateInputEvent{ID: 1, Text: em.ex.input.ToString(), Pos: em.ex.input.Pos}
 }
 
 // HandleExInput handles the Ex input events
-func (em *Vi) HandleExInput(event ovim.Event) bool {
-	if char, ok := event.(*ovim.CharacterEvent); ok {
+func (em *Vi) HandleExInput(event novi.Event) bool {
+	if char, ok := event.(*novi.CharacterEvent); ok {
 		em.ex.input.Insert(char.Rune)
-		em.c <- &ovim.UpdateInputEvent{ID: 1, Text: em.ex.input.Buffer.ToString(), Pos: em.ex.input.Pos}
-	} else if key, ok := event.(*ovim.KeyEvent); ok {
+		em.c <- &novi.UpdateInputEvent{ID: 1, Text: em.ex.input.Buffer.ToString(), Pos: em.ex.input.Pos}
+	} else if key, ok := event.(*novi.KeyEvent); ok {
 		em.HandleExKey(key)
 	}
 	return true

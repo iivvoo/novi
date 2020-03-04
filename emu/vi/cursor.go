@@ -1,14 +1,14 @@
 package viemu
 
 import (
-	"github.com/iivvoo/ovim/ovim"
+	"github.com/iivvoo/novi/novi"
 )
 
 // Move moves the cursor the way Vi would do it
 // if pastEnd is true we allow the cursor to be placed past the last character,
 // which Vi does in edit mode
-func (em *Vi) Move(c *ovim.Cursor, movement ovim.CursorDirection) {
-	maxPos := func(l ovim.Line) int {
+func (em *Vi) Move(c *novi.Cursor, movement novi.CursorDirection) {
+	maxPos := func(l novi.Line) int {
 		limit := len(c.Buffer.Lines[c.Line])
 		if em.Mode == ModeCommand {
 			return limit
@@ -17,26 +17,26 @@ func (em *Vi) Move(c *ovim.Cursor, movement ovim.CursorDirection) {
 	}
 
 	switch movement {
-	case ovim.CursorUp:
+	case novi.CursorUp:
 		if c.Line > 0 {
 			c.Line--
 		}
-	case ovim.CursorDown:
+	case novi.CursorDown:
 		// weirdness because empty last line that we want to position on
 		if c.Line < len(c.Buffer.Lines)-1 {
 			c.Line++
 		}
-	case ovim.CursorLeft:
+	case novi.CursorLeft:
 		if c.Pos > 0 {
 			c.Pos--
 		}
-	case ovim.CursorRight:
+	case novi.CursorRight:
 		if c.Pos < maxPos(c.Buffer.Lines[c.Line]) {
 			c.Pos++
 		}
-	case ovim.CursorBegin:
+	case novi.CursorBegin:
 		c.Pos = 0
-	case ovim.CursorEnd:
+	case novi.CursorEnd:
 		c.Pos = len(c.Buffer.Lines[c.Line]) - 1
 		if c.Pos < 0 {
 			c.Pos = 0
@@ -51,7 +51,7 @@ func (em *Vi) Move(c *ovim.Cursor, movement ovim.CursorDirection) {
 }
 
 // MoveMany moves the cursor more than one position, if possible
-func (em *Vi) MoveMany(c *ovim.Cursor, movement ovim.CursorDirection, count int) {
+func (em *Vi) MoveMany(c *novi.Cursor, movement novi.CursorDirection, count int) {
 	for i := 0; i < count; i++ {
 		em.Move(c, movement)
 	}
@@ -59,11 +59,11 @@ func (em *Vi) MoveMany(c *ovim.Cursor, movement ovim.CursorDirection, count int)
 
 // MoveCursorRune moves cursor based on hjkl
 func (em *Vi) MoveCursorRune(r rune, count int) bool {
-	m := map[rune]ovim.CursorDirection{
-		'h': ovim.CursorLeft,
-		'j': ovim.CursorDown,
-		'k': ovim.CursorUp,
-		'l': ovim.CursorRight,
+	m := map[rune]novi.CursorDirection{
+		'h': novi.CursorLeft,
+		'j': novi.CursorDown,
+		'k': novi.CursorUp,
+		'l': novi.CursorRight,
 	}
 	for _, c := range em.Editor.Cursors {
 		for i := 0; i < count; i++ {
@@ -74,9 +74,9 @@ func (em *Vi) MoveCursorRune(r rune, count int) bool {
 }
 
 // HandleMoveCursors moves the cursors based on the given event
-func (em *Vi) HandleMoveCursors(ev ovim.Event) bool {
+func (em *Vi) HandleMoveCursors(ev novi.Event) bool {
 	for _, c := range em.Editor.Cursors {
-		em.Move(c, ovim.CursorMap[ev.(*ovim.KeyEvent).Key])
+		em.Move(c, novi.CursorMap[ev.(*novi.KeyEvent).Key])
 	}
 	return true
 }
