@@ -119,6 +119,7 @@ func (o *Ovi) GetDimension() (int, int) {
 	_, _, w, h := o.statusArea.GetRect()
 	return w, h
 }
+
 func (o *Ovi) UpdateStatus(status string) {
 	if o.Source == MainSource && o.errorMsg == "" {
 		o.statusArea.SetText("[-:-]" + status)
@@ -127,20 +128,9 @@ func (o *Ovi) UpdateStatus(status string) {
 }
 
 func (o *Ovi) UpdateError(message string) {
-	// use [xx] coloring
 	o.errorMsg = message
 
 	o.statusArea.SetText(fmt.Sprintf("[white:red]%s[-:-]", message))
-
-	// Not sure how we can properly reset/clear the status - we don't have access
-	// to App, and calling o.UpdateStatus() doesn't have the desired effect
-	// go func() {
-	// 	time.Sleep(time.Second * 3)
-	// 	o.errorMsg = ""
-	// 	o.App.QueueUpdateDraw(func() {
-	// 		o.UpdateStatus(o.statusMsg)
-	// 	})
-	// }()
 }
 
 func (o *Ovi) UpdateInput(input string, pos int) {

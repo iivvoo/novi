@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/gdamore/tcell"
 	viemu "github.com/iivvoo/ovim/emu/vi"
@@ -28,6 +29,7 @@ var log = logger.GetLogger("ovide")
 // Since we're wrapping more and more of o.prim, make that just compliant?
 type UIWrapper struct {
 	prim *Ovi
+	app  *tview.Application
 }
 
 func (o *UIWrapper) Finish() {}
@@ -62,13 +64,23 @@ func (o *UIWrapper) SetStatus(status string) {
 
 func (o *UIWrapper) SetError(error string) {
 	o.prim.UpdateError(error)
+	go func() {
+		time.Sleep(time.Second * 3)
+		o.app.QueueUpdateDraw(func() {
+			o.SetError("")
+			// or store current status ourselves?
+			o.SetStatus(o.prim.statusMsg)
+			log.Printf("Error cleared")
+		})
+	}()
 }
 
-func NewCore(fullpath string, editor *ovim.Editor, ch chan IDEEvent) *Ovi {
+func NewCore(app *tview.Application, fullpath string, editor *ovim.Editor, ch chan IDEEvent) *Ovi {
 	emu := viemu.NewVi(editor)
 	prim := NewOviPrimitive(editor).(*Ovi)
 	ui := &UIWrapper{
 		prim: prim,
+		app:  app,
 	}
 
 	c := ovim.NewCore(editor, ui, emu)
@@ -125,7 +137,7 @@ func Run() {
 					editor.SetCursor(0, 0)
 
 					// pass a more generic tab id in stead of full path?
-					prim := NewCore(e.FullPath, editor, c)
+					prim := NewCore(app, e.FullPath, editor, c)
 
 					app.SetFocus(tabs.AddTab(e.FullPath, e.Filename, prim))
 					log.Println("Done opening tab")
@@ -140,7 +152,7 @@ func Run() {
 							editor.SetCursor(0, 0)
 
 							// pass a more generic tab id in stead of full path?
-							prim := NewCore(p, editor, c)
+							prim := NewCore(app, p, editor, c)
 
 							app.SetFocus(tabs.AddTab(p, s, prim))
 							nav.ClearPlaceHolder()
