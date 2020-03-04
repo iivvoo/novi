@@ -3,11 +3,11 @@ package ovide
 import (
 	"time"
 
-	"github.com/iivvoo/ovim/ovim"
+	"github.com/iivvoo/novi/novi"
 	"github.com/rivo/tview"
 )
 
-// OviWrapper wraps the OviPrimitive into something that we can pass to the ovim.Core
+// OviWrapper wraps the OviPrimitive into something that we can pass to the novi.Core
 type OviWrapper struct {
 	prim *Ovi
 	app  *tview.Application
@@ -22,7 +22,7 @@ func NewWrapper(app *tview.Application, prim *Ovi) *OviWrapper {
 func (o *OviWrapper) Finish() {}
 
 // Loop allows the UI to start a loop goroutine
-func (o *OviWrapper) Loop(c chan ovim.Event) {
+func (o *OviWrapper) Loop(c chan novi.Event) {
 	o.prim.SetChan(c)
 }
 
@@ -35,7 +35,7 @@ func (o *OviWrapper) GetDimension() (int, int) {
 }
 
 // AskInput will instruct the UI to ask for additional, "inline" input
-func (o *OviWrapper) AskInput(string) ovim.InputSource {
+func (o *OviWrapper) AskInput(string) novi.InputSource {
 	// handle keys from status
 	o.prim.Source = CommandSource
 
@@ -44,12 +44,12 @@ func (o *OviWrapper) AskInput(string) ovim.InputSource {
 }
 
 // CloseInput closes the inline input
-func (o *OviWrapper) CloseInput(ovim.InputSource) {
+func (o *OviWrapper) CloseInput(novi.InputSource) {
 	o.prim.Source = MainSource
 }
 
 // UpdateInput is called to update the inline input
-func (o *OviWrapper) UpdateInput(source ovim.InputSource, s string, pos int) {
+func (o *OviWrapper) UpdateInput(source novi.InputSource, s string, pos int) {
 	o.prim.UpdateInput(":"+s, pos+1)
 }
 

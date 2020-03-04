@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 
 	"github.com/gdamore/tcell"
-	viemu "github.com/iivvoo/ovim/emu/vi"
-	"github.com/iivvoo/ovim/logger"
-	"github.com/iivvoo/ovim/ovim"
+	viemu "github.com/iivvoo/novi/emu/vi"
+	"github.com/iivvoo/novi/logger"
+	"github.com/iivvoo/novi/novi"
 	"github.com/rivo/tview"
 )
 
@@ -26,12 +26,12 @@ var log = logger.GetLogger("ovide")
  */
 
 // BuildEditor builds/sets up the editor and UI
-func BuildEditor(app *tview.Application, fullpath string, editor *ovim.Editor, ch chan IDEEvent) *Ovi {
+func BuildEditor(app *tview.Application, fullpath string, editor *novi.Editor, ch chan IDEEvent) *Ovi {
 	emu := viemu.NewVi(editor)
 	prim := NewOviPrimitive(editor).(*Ovi)
 	ui := NewWrapper(app, prim)
 
-	c := ovim.NewCore(editor, ui, emu)
+	c := novi.NewCore(editor, ui, emu)
 
 	go func() {
 		c.Loop()
@@ -80,7 +80,7 @@ func Run() {
 				switch e := e.(type) {
 				case *OpenFileEvent:
 					log.Printf("Opening tab for %s", e.Filename)
-					editor := ovim.NewEditor()
+					editor := novi.NewEditor()
 					editor.LoadFile(e.FullPath)
 					editor.SetCursor(0, 0)
 
@@ -95,7 +95,7 @@ func Run() {
 							p := filepath.Join(e.ParentFolder, s)
 							os.Create(p)
 							// DUP!
-							editor := ovim.NewEditor()
+							editor := novi.NewEditor()
 							editor.LoadFile(p)
 							editor.SetCursor(0, 0)
 

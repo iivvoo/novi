@@ -11,23 +11,23 @@ import (
 // RecoverFromPanic attempts to print a usable stacktrace in a panic-recover
 func RecoverFromPanic(cleanup func()) {
 	/*
-			A normal debug.Stack() at this point looks like this:
-			goroutine 23 [running]:
-				runtime/debug.Stack(0xc00012a000, 0x584f40, 0xc0000d0120)
-		       /opt/go1.13.1/src/runtime/debug/stack.go:24 +0x9d
-				main.start.func1.1(0xc0000882a0, 0x5c3de0, 0xc00012a000)
-		       /projects/ovim/cmd/ovim/main.go:65 +0x8d
-				panic(0x584f40, 0xc0000d0120)
-		       /opt/go1.13.1/src/runtime/panic.go:679 +0x1b2
-				github.com/iivvoo/ovim/ovim.(*TermUI).RenderTerm(0xc0000b8700)
-		       /projects/ovim/ovim/term.go:90 +0x487
-				main.start.func1(0xc0000882a0, 0x5c3de0, 0xc00012a000, 0xc00008c720, 0xc0000b8700)
-		       /projects/ovim/cmd/ovim/main.go:110 +0x229
-				created by main.start
+	   A normal debug.Stack() at this point looks like this:
+	   goroutine 23 [running]:
+	       runtime/debug.Stack(0xc00012a000, 0x584f40, 0xc0000d0120)
+	      /opt/go1.13.1/src/runtime/debug/stack.go:24 +0x9d
+	       main.start.func1.1(0xc0000882a0, 0x5c3de0, 0xc00012a000)
+	      /projects/novi/cmd/novi/main.go:65 +0x8d
+	       panic(0x584f40, 0xc0000d0120)
+	      /opt/go1.13.1/src/runtime/panic.go:679 +0x1b2
+	       github.com/iivvoo/novi/novi.(*TermUI).RenderTerm(0xc0000b8700)
+	      /projects/novi/novi/term.go:90 +0x487
+	       main.start.func1(0xc0000882a0, 0x5c3de0, 0xc00012a000, 0xc00008c720, 0xc0000b8700)
+	      /projects/novi/cmd/novi/main.go:110 +0x229
+	       created by main.start
 
-			We don't care about the trace up until the panic and the line after it,
-			so we need to do some fancy counting to skip that. Also, it's nice to
-			have the actual error at the bottom
+	   We don't care about the trace up until the panic and the line after it,
+	   so we need to do some fancy counting to skip that. Also, it's nice to
+	   have the actual error at the bottom
 	*/
 	if r := recover(); r != nil {
 		cleanup()

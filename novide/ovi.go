@@ -4,33 +4,33 @@ import (
 	"fmt"
 
 	"github.com/gdamore/tcell"
-	"github.com/iivvoo/ovim/ovim"
-	termui "github.com/iivvoo/ovim/ui/term"
+	"github.com/iivvoo/novi/novi"
+	termui "github.com/iivvoo/novi/ui/term"
 	"github.com/rivo/tview"
 )
 
 // We're always just one source since the IDE can provide a separate input source
 const (
-	MainSource    ovim.InputSource = 0
-	CommandSource ovim.InputSource = 1
+	MainSource    novi.InputSource = 0
+	CommandSource novi.InputSource = 1
 )
 
 // implement the OviPrimitive
 type Ovi struct {
 	tview.Primitive
-	Editor     *ovim.Editor
+	Editor     *novi.Editor
 	ViewportX  int
 	ViewportY  int
 	editArea   tview.Primitive
 	statusArea *tview.TextView
-	Source     ovim.InputSource
-	c          chan ovim.Event
+	Source     novi.InputSource
+	c          chan novi.Event
 	InputPos   int
 	statusMsg  string
 	errorMsg   string
 }
 
-func NewOviPrimitive(e *ovim.Editor) tview.Primitive {
+func NewOviPrimitive(e *novi.Editor) tview.Primitive {
 	x := tview.NewFlex().SetDirection(tview.FlexRow)
 
 	editArea := tview.NewBox()
@@ -56,7 +56,7 @@ func NewOviPrimitive(e *ovim.Editor) tview.Primitive {
 	return o
 }
 
-func (o *Ovi) SetChan(c chan ovim.Event) {
+func (o *Ovi) SetChan(c chan novi.Event) {
 	o.c = c
 }
 

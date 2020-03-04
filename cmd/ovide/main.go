@@ -4,8 +4,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/iivvoo/ovim/logger"
-	"github.com/iivvoo/ovim/ovide"
+	"github.com/iivvoo/novi/logger"
+	"github.com/iivvoo/novi/ovide"
 )
 
 func main() {
