@@ -1,4 +1,4 @@
-package ovim
+package novi
 
 import "testing"
 
@@ -17,7 +17,7 @@ func AssertCursor(t *testing.T, c *Cursor, line, pos int) {
 }
 
 // AssertBufferMatch asserts the buffer matches the expected string slice
-func AssertBufferMatch(t *testing.T, b *Buffer, expected []string) {
+func AssertBufferMatch(t *testing.T, b *Buffer, expected ...string) {
 	t.Helper()
 
 	if a, b := b.Length(), len(expected); a != b {
@@ -33,12 +33,18 @@ func AssertBufferMatch(t *testing.T, b *Buffer, expected []string) {
 	}
 }
 
+// AssertBufferModified asserts the buffer was modified
+func AssertBufferModified(t *testing.T, b *Buffer, modified bool) {
+	t.Helper()
+
+	if modified && !b.Modified {
+		t.Errorf("Expected buffer to be modified, but it wasn't")
+	} else if !modified && b.Modified {
+		t.Errorf("Expected buffer NOT to be modified, but it actually WAS")
+	}
+}
+
 // BuildBuffer creates a new buffer based on the supplied strings
 func BuildBuffer(lines ...string) *Buffer {
-	b := NewBuffer()
-	for _, l := range lines {
-		b.Lines = append(b.Lines, []rune(l))
-	}
-
-	return b
+	return NewBuffer().LoadStrings(lines)
 }

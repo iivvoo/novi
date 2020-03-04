@@ -2,17 +2,15 @@ package main
 
 import (
 	"flag"
-	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	basicemu "github.com/iivvoo/ovim/emu/basic"
-	viemu "github.com/iivvoo/ovim/emu/vi"
-	"github.com/iivvoo/ovim/logger"
-	"github.com/iivvoo/ovim/ovim"
-	termui "github.com/iivvoo/ovim/ui/term"
+	basicemu "github.com/iivvoo/novi/emu/basic"
+	viemu "github.com/iivvoo/novi/emu/vi"
+	"github.com/iivvoo/novi/logger"
+	"github.com/iivvoo/novi/novi"
+	termui "github.com/iivvoo/novi/ui/term"
 )
 
 var log = logger.GetLogger("main")
@@ -43,35 +41,35 @@ func start() {
 		}
 	}
 
-	if len(flag.Args()) != 1 {
-		fmt.Println("Usage: ovim filename")
-		os.Exit(1)
-	}
 	// initialize logger
-	logger.OpenLog("ovim.log")
+	logger.OpenLog("novi.log")
 	log.Printf("Starting at %s\n", time.Now())
 	defer logger.CloseLog()
 
-	editor := ovim.NewEditor()
+	editor := novi.NewEditor()
 	ui := termui.NewTermUI(editor)
 	ui.SetSize(w, h)
-	defer ovim.RecoverFromPanic(func() {
+	defer novi.RecoverFromPanic(func() {
 		ui.Finish()
 	})
 
-	fileName := flag.Args()[0]
+	fileName := ""
+
+	if len(flag.Args()) > 0 {
+		fileName = flag.Args()[0]
+	}
 
 	editor.LoadFile(fileName)
 	editor.SetCursor(8, 0)
 
-	var emu ovim.Emulation
+	var emu novi.Emulation
 
 	if emuFlag == "vi" {
 		emu = viemu.NewVi(editor)
 	} else {
 		emu = basicemu.NewBasic(editor)
 	}
-	core := ovim.NewCore(editor, ui, emu)
+	core := novi.NewCore(editor, ui, emu)
 	core.Loop()
 	ui.Finish()
 }

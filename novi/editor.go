@@ -1,10 +1,11 @@
-package ovim
+package novi
 
 import (
 	"bufio"
+	"errors"
 	"os"
 
-	"github.com/iivvoo/ovim/logger"
+	"github.com/iivvoo/novi/logger"
 )
 
 /*
@@ -34,8 +35,8 @@ type Editor struct {
 }
 
 func NewEditor() *Editor {
-	e := &Editor{Buffer: NewBuffer()}
-	e.Cursors = append(e.Cursors, &Cursor{-1, 0})
+	e := &Editor{Buffer: NewBuffer().InitializeEmptyBuffer()}
+	e.Cursors = append(e.Cursors, e.Buffer.NewCursor(-1, 0))
 	return e
 }
 
@@ -47,33 +48,63 @@ func (e *Editor) LoadFile(name string) {
 	// reset everything
 
 	file, err := os.Open(name)
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		panic(err)
 	}
-	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		e.Buffer.AddLine(Line(scanner.Text()))
-	}
+	e.Buffer.LoadFile(file)
 	e.filename = name
+	e.Buffer.Modified = false
 }
 
+var (
+	ErrSaveNoName         = errors.New("No filename set")
+	ErrSaveNoBackup       = errors.New("Could not create backup")
+	ErrSaveFailedCreate   = errors.New("Could not create file")
+	ErrSaveWrite          = errors.New("Failed to write contents")
+	ErrSaveWouldOverwrite = errors.New("Not overwriting existing file")
+	ErrSaveOther          = errors.New("Other error")
+)
+
 // SaveFile saves the buffer to a file
-func (e *Editor) SaveFile() {
-	// todo: take from buffer, optionally ask for name
+func (e *Editor) SaveFile(name string, force bool) error {
+	changed := name != "" && e.filename != name
+	exists := true
+
+	if name != "" {
+		e.filename = name
+	}
+
+	if _, err := os.Stat(e.filename); err != nil {
+		if os.IsNotExist(err) {
+			exists = false
+		} else {
+			return ErrSaveOther
+		}
+	}
+
+	// only overwrite existing file
+	if changed && exists && !force {
+		if _, err := os.Stat(e.filename); err == nil || !os.IsNotExist(err) {
+			return ErrSaveWouldOverwrite
+		}
+	}
+
 	if e.filename == "" {
 		log.Println("No filename set on buffer, can't save")
-		return
+		return ErrSaveNoName
 	}
-	if err := CopyFile(e.filename, e.filename+".bak"); err != nil {
-		log.Printf("Failed to make backup copy for %s: %v", e.filename, err)
-		return
+
+	if exists {
+		if err := CopyFile(e.filename, e.filename+".bak"); err != nil {
+			log.Printf("Failed to make backup copy for %s: %v", e.filename, err)
+			return ErrSaveNoBackup
+		}
 	}
 	f, err := os.Create(e.filename)
 	if err != nil {
 		log.Printf("Failed to open/create %s: %v", e.filename, err)
-		return
+		return ErrSaveFailedCreate
 	}
 	defer f.Close()
 
@@ -82,24 +113,23 @@ func (e *Editor) SaveFile() {
 	for _, line := range e.Buffer.Lines {
 		if _, err := w.WriteString(string(line) + "\n"); err != nil {
 			log.Printf("Failed to Write %s: %v", e.filename, err)
-			return
+			return ErrSaveWrite
 		}
 
 	}
 	if err := w.Flush(); err != nil {
 		log.Printf("Failed to Flush %s: %v", e.filename, err)
 	}
-}
 
-func (e *Editor) SetStatus(status string) {
-
+	e.Buffer.Modified = false
+	return nil
 }
 
 // SetCursor sets the first cursor at a specific position
 func (e *Editor) SetCursor(row, col int) {
 	e.Cursors[0].Line = row
 	e.Cursors[0].Pos = col
-
+	e.Cursors[0].Validate()
 }
 
 var CursorMap = map[KeyType]CursorDirection{

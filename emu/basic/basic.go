@@ -3,8 +3,8 @@ package basicemu
 import (
 	"fmt"
 
-	"github.com/iivvoo/ovim/logger"
-	"github.com/iivvoo/ovim/ovim"
+	"github.com/iivvoo/novi/logger"
+	"github.com/iivvoo/novi/novi"
 )
 
 var log = logger.GetLogger("basicemu")
@@ -27,11 +27,18 @@ var log = logger.GetLogger("basicemu")
 
 // The Basic struct encapsulates all state for the Basic Editing emulation
 type Basic struct {
-	Editor *ovim.Editor
+	Editor *novi.Editor
+
+	c chan novi.EmuEvent
 }
 
-func NewBasic(e *ovim.Editor) *Basic {
+func NewBasic(e *novi.Editor) *Basic {
 	return &Basic{Editor: e}
+}
+
+// SetChan passes us a channel to communicate with the core.
+func (em *Basic) SetChan(c chan novi.EmuEvent) {
+	em.c = c
 }
 
 /*
@@ -48,19 +55,19 @@ func (em *Basic) Backspace() {
 	for _, c := range em.Editor.Cursors {
 		if c.Pos > 0 {
 			em.Editor.Buffer.RemoveRuneBeforeCursor(c)
-			Move(em.Editor.Buffer, c, ovim.CursorLeft)
+			Move(c, novi.CursorLeft)
 		} else if c.Line > 0 {
 			// first move the cursor so we can use CursorEnd to move to the desired position
 			l := c.Line
-			Move(em.Editor.Buffer, c, ovim.CursorUp)
-			Move(em.Editor.Buffer, c, ovim.CursorEnd)
+			Move(c, novi.CursorUp)
+			Move(c, novi.CursorEnd)
 			em.Editor.Buffer.JoinLineWithPrevious(l)
 
 			// adjust all other cursors that are on/after l
 			// XXX Untested
 			// XXX also wrong, also changes cursors *before* line.
 			for _, cc := range em.Editor.Cursors.After(c) {
-				Move(em.Editor.Buffer, cc, ovim.CursorUp)
+				Move(cc, novi.CursorUp)
 			}
 		}
 	}
@@ -74,18 +81,18 @@ func (em *Basic) Backspace() {
  *
  * Also, who is in charge of updating the cursor(s)?
  */
-func (em *Basic) HandleEvent(event ovim.Event) bool {
+func (em *Basic) HandleEvent(_ novi.InputID, event novi.Event) bool {
 	switch ev := event.(type) {
-	case *ovim.KeyEvent:
+	case *novi.KeyEvent:
 		// control keys, purely control
-		if ev.Modifier == ovim.ModCtrl {
+		if ev.Modifier == novi.ModCtrl {
 			switch ev.Rune {
 			case 'h':
 				em.Backspace()
 			case 'q':
 				return false
 			case 's':
-				em.Editor.SaveFile()
+				em.c <- &novi.SaveEvent{}
 				log.Println("File saved")
 			default:
 				log.Printf("Don't know what to do with control key %+v %c", ev, ev.Rune)
@@ -93,28 +100,31 @@ func (em *Basic) HandleEvent(event ovim.Event) bool {
 			// no modifier at all
 		} else if ev.Modifier == 0 {
 			switch ev.Key {
-			case ovim.KeyBackspace, ovim.KeyDelete:
+			case novi.KeyBackspace, novi.KeyDelete:
 				// for cursors on pos 0, join with prev (if any)
 				em.Backspace()
-			case ovim.KeyEnter:
-				em.Editor.Buffer.SplitLines(em.Editor.Cursors)
-				// Incorrect multi cursor behaviour, new lines affect all following cursors!
+			case novi.KeyEnter:
 				for _, c := range em.Editor.Cursors {
-					Move(em.Editor.Buffer, c, ovim.CursorDown)
-					Move(em.Editor.Buffer, c, ovim.CursorBegin)
+					em.Editor.Buffer.SplitLine(c)
+					Move(c, novi.CursorDown)
+					Move(c, novi.CursorBegin)
+					// update all cursors after
+					for _, ca := range em.Editor.Cursors.After(c) {
+						ca.Line++
+					}
 				}
-			case ovim.KeyLeft, ovim.KeyRight, ovim.KeyUp, ovim.KeyDown, ovim.KeyHome, ovim.KeyEnd:
+			case novi.KeyLeft, novi.KeyRight, novi.KeyUp, novi.KeyDown, novi.KeyHome, novi.KeyEnd:
 				for _, c := range em.Editor.Cursors {
-					Move(em.Editor.Buffer, c, ovim.CursorMap[ev.Key])
+					Move(c, novi.CursorMap[ev.Key])
 				}
 			default:
 				log.Printf("Don't know what to do with key event %+v", ev)
 			}
 		}
-	case *ovim.CharacterEvent:
+	case *novi.CharacterEvent:
 		em.Editor.Buffer.PutRuneAtCursors(em.Editor.Cursors, ev.Rune)
 		for _, c := range em.Editor.Cursors {
-			Move(em.Editor.Buffer, c, ovim.CursorRight)
+			Move(c, novi.CursorRight)
 		}
 	default:
 		log.Printf("Don't know what to do with event %+v", ev)
@@ -122,9 +132,15 @@ func (em *Basic) HandleEvent(event ovim.Event) bool {
 	return true
 }
 
+// GetStatus returns the status for the emulation, to be printed in a status bar
 func (em *Basic) GetStatus(width int) string {
 	first := em.Editor.Cursors[0]
+	changed := ""
+
+	if em.Editor.Buffer.Modified {
+		changed = "(changed) "
+	}
 	// Make use of width to align cursor row/col right. Truncate if necessary
-	return fmt.Sprintf("%s (changed?) row %d col %d (INS)",
-		em.Editor.GetFilename(), first.Line+1, first.Pos+1)
+	return fmt.Sprintf("%s %srow %d col %d (INS)",
+		em.Editor.GetFilename(), changed, first.Line+1, first.Pos+1)
 }

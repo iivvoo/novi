@@ -1,4 +1,4 @@
-package ovim
+package novi
 
 /*
  * Cursors always (?) operate in the context of a buffer with lines,
@@ -20,9 +20,43 @@ package ovim
  */
 
 // Cursor defines a position within a buffer
+// A cursor has access to the buffer it's bound to, but should only use this for checking/reading,
+// never modifying. Buffer modifications belonv on *Buffer
 type Cursor struct {
-	Line int
-	Pos  int
+	Line   int
+	Pos    int
+	Buffer *Buffer
+}
+
+// NewCursor creates a new cursor
+func NewCursor(b *Buffer, line, pos int) *Cursor {
+	return &Cursor{Line: line, Pos: pos, Buffer: b}
+}
+
+// Validate verifies if the cursor is valid for the current buffer
+// and adjusts if necessary
+func (c *Cursor) Validate() bool {
+	valid := true
+
+	if c.Line >= c.Buffer.Length() {
+		c.Line = c.Buffer.Length() - 1
+		valid = false
+	}
+
+	// XXX if we assert that the buffer always has at least 1 (empty)
+	// line then c.Line can't be < 0
+	if c.Line < 0 {
+		c.Line = 0
+		c.Pos = 0
+		valid = false
+	} else if c.Pos >= len(c.Buffer.Lines[c.Line]) {
+		c.Pos = len(c.Buffer.Lines[c.Line]) - 1
+		if c.Pos < 0 {
+			c.Pos = 0
+		}
+		valid = false
+	}
+	return valid
 }
 
 // CursorDirection defines the direction a cursor can go
@@ -45,7 +79,7 @@ type Cursors []*Cursor
 func (cs Cursors) After(c *Cursor) Cursors {
 	var result Cursors
 	for _, cc := range cs {
-		if cc.Line > c.Line || (cc.Line == c.Line && c.Pos > cc.Pos) {
+		if cc.Line > c.Line || (cc.Line == c.Line && cc.Pos > c.Pos) {
 			result = append(result, cc)
 		}
 	}
@@ -56,7 +90,7 @@ func (cs Cursors) After(c *Cursor) Cursors {
 func (cs Cursors) Before(c *Cursor) Cursors {
 	var result Cursors
 	for _, cc := range cs {
-		if cc.Line < c.Line || (cc.Line == c.Line && c.Pos < cc.Pos) {
+		if cc.Line < c.Line || (cc.Line == c.Line && cc.Pos < c.Pos) {
 			result = append(result, cc)
 		}
 	}
