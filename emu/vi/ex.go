@@ -9,19 +9,19 @@ import (
 
 // Input holds the state of a simple input buffer
 type Input struct {
-	Buffer *Line
+	Buffer *novi.Line
 	Pos    int
 }
 
 // NewInput creates a new input
 func NewInput() *Input {
-	return &Input{NewLine(), 0}
+	return &Input{novi.NewLine(), 0}
 }
 
 // Clear clears the input, resetting its size/contents to empty
 func (i *Input) Clear() {
 	i.Pos = 0
-	i.Buffer = NewLine()
+	i.Buffer = novi.NewLine()
 }
 
 // ToString returns the string representation of the contents of the input

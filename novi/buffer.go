@@ -33,35 +33,9 @@ import (
 */
 // https://github.com/golang/go/wiki/SliceTricks
 
-// Line implements a sequence of Runes
-type Line []rune
-
-// GetRunes implements safe slicing with boundary checks
-func (l Line) GetRunes(start, end int) []rune {
-	if start > len(l) {
-		return nil
-	}
-	if start > end {
-		return nil
-	}
-	if end > len(l) {
-		end = len(l)
-	}
-	return l[start:end].Copy()
-}
-
-// Copy makes a proper copy of a line. Effectively, Lines are slices and taking
-// (sub)slices of a slice does not make a copy. Modifying the original will copy the
-// subslice which is not what you usually want
-func (l Line) Copy() Line {
-	c := make(Line, len(l))
-	copy(c, l)
-	return c
-}
-
 // Buffer encapsulates the state o an editable line buffer
 type Buffer struct {
-	Lines       []Line // Making Lines public is risky, shoud consider making it unexported
+	Lines       []*Line // Making Lines public is risky, shoud consider making it unexported
 	Modified    bool
 	initialized bool
 }
@@ -74,7 +48,7 @@ func NewBuffer() *Buffer {
 }
 
 func (b *Buffer) InitializeEmptyBuffer() *Buffer {
-	b.Lines = []Line{Line{}}
+	b.Lines = []*Line{&Line{}}
 	b.initialized = true
 	return b
 }
@@ -83,7 +57,7 @@ func (b *Buffer) LoadFile(in io.Reader) *Buffer {
 	b.Lines = nil
 	scanner := bufio.NewScanner(in)
 	for scanner.Scan() {
-		b.AddLine(Line(scanner.Text()))
+		b.AddLine(NewLineFromString(scanner.Text()))
 	}
 	b.Validate()
 	b.initialized = true
@@ -93,7 +67,7 @@ func (b *Buffer) LoadFile(in io.Reader) *Buffer {
 func (b *Buffer) LoadStrings(lines []string) *Buffer {
 	b.Lines = nil
 	for _, l := range lines {
-		b.Lines = append(b.Lines, []rune(l))
+		b.Lines = append(b.Lines, NewLineFromString(l))
 	}
 	b.Validate()
 	b.initialized = true
@@ -113,14 +87,14 @@ func (b *Buffer) Length() int {
 // Validate verifies and makes sure the buffer has a valid state
 func (b *Buffer) Validate() bool {
 	if b.Length() == 0 {
-		b.Lines = []Line{Line{}}
+		b.Lines = []*Line{&Line{}}
 		return false
 	}
 	return true
 }
 
 // GetLines attempts to retun the lines between start/end
-func (b *Buffer) GetLines(start, end int) []Line {
+func (b *Buffer) GetLines(start, end int) []*Line {
 	if start > b.Length() {
 		return nil
 	}
@@ -134,7 +108,7 @@ func (b *Buffer) GetLines(start, end int) []Line {
 }
 
 // AddLine adds a line to the bottom of the buffer
-func (b *Buffer) AddLine(line Line) {
+func (b *Buffer) AddLine(line *Line) {
 	b.Lines = append(b.Lines, line)
 	b.Modified = true
 }
@@ -142,7 +116,7 @@ func (b *Buffer) AddLine(line Line) {
 func (b *Buffer) DumpLog(header string) {
 	log.Println(header)
 	for i, l := range b.Lines {
-		log.Printf(" %d [%s]", i, string(l))
+		log.Printf(" %d [%s]", i, string(l.ToString()))
 	}
 }
 
@@ -153,7 +127,7 @@ func (b *Buffer) PutRuneAtCursors(cs Cursors, r rune) {
 	b.Validate()
 	for _, c := range cs {
 		line := b.Lines[c.Line]
-		line = append(line[:c.Pos], append(Line{r}, line[c.Pos:]...)...)
+		line.InsertRune(r, c.Pos)
 		b.Lines[c.Line] = line
 	}
 	b.Modified = true
@@ -164,7 +138,7 @@ func (b *Buffer) RemoveRuneBeforeCursor(c *Cursor) {
 	// optionally, Cursors.all(func() {})
 	if c.Pos > 0 {
 		line := b.Lines[c.Line]
-		line = append(line[:c.Pos-1], line[c.Pos:]...)
+		line.RemoveRune(c.Pos - 1)
 		b.Lines[c.Line] = line
 		b.Modified = true
 	}
@@ -180,9 +154,9 @@ func (b *Buffer) RemoveRuneBeforeCursor(c *Cursor) {
  */
 func (b *Buffer) SplitLine(c *Cursor) {
 	line := b.Lines[c.Line]
-	before, after := line[c.Pos:].Copy(), line[:c.Pos].Copy()
+	before, after := line.Split(c.Pos)
 	b.Lines = append(b.Lines[:c.Line],
-		append([]Line{after, before}, b.Lines[c.Line+1:]...)...)
+		append([]*Line{after, before}, b.Lines[c.Line+1:]...)...)
 	b.Modified = true
 }
 
@@ -194,7 +168,7 @@ func (b *Buffer) InsertLine(c *Cursor, line string, before bool) bool {
 	// On an empty buffer, just add the line
 	if b.Length() == 0 {
 		// XXX obsolete?
-		b.AddLine([]rune(line))
+		b.AddLine(NewLineFromString(line))
 		b.Modified = true
 		return true
 	}
@@ -209,7 +183,7 @@ func (b *Buffer) InsertLine(c *Cursor, line string, before bool) bool {
 	// arrays so it's not too inefficient, but a more efficient Buffer datastructure
 	// should be possible.
 	b.Lines = append(b.Lines[:pos],
-		append([]Line{[]rune(line)}, b.Lines[pos:]...)...)
+		append([]*Line{NewLineFromString(line)}, b.Lines[pos:]...)...)
 	b.Modified = true
 	return true
 }
@@ -238,7 +212,7 @@ func (b *Buffer) JoinLineWithPrevious(line int) bool {
 		return false
 	}
 
-	b.Lines[line-1] = append(b.Lines[line-1], b.Lines[line]...)
+	b.Lines[line-1].Join(b.Lines[line])
 	b.RemoveLine(line)
 	b.Modified = true
 	return true
@@ -264,37 +238,10 @@ func (b *Buffer) RemoveCharacters(c *Cursor, before bool, howmany int) *Buffer {
 		return b.RemoveBetweenCursors(b.NewCursor(c.Line, startPos), endPos)
 	}
 	endPos := c.Pos + howmany - 1
-	if endPos > len(b.Lines[c.Line])-1 {
-		endPos = len(b.Lines[c.Line]) - 1
+	if endPos > b.Lines[c.Line].Len()-1 {
+		endPos = b.Lines[c.Line].Len() - 1
 	}
 	return b.RemoveBetweenCursors(c, b.NewCursor(c.Line, endPos))
-}
-
-func (b *Buffer) xRemoveCharacters(c *Cursor, before bool, howmany int) {
-	line := b.Lines[c.Line]
-
-	if before {
-		if howmany > c.Pos {
-			// befoe c.Pos, If c.Pos == 1, there's 1 char before it
-			howmany = c.Pos
-		}
-		if howmany > 0 {
-			line = append(line[:c.Pos-howmany], line[c.Pos:]...)
-			b.Lines[c.Line] = line
-		}
-	} else {
-		if howmany > len(line)-c.Pos {
-			// 12345
-			//   ^- cusor pos 2
-			// max howmany: 3 -> len(line) - pos
-			howmany = len(line) - c.Pos
-		}
-		if howmany > 0 {
-			line = append(line[:c.Pos], line[c.Pos+howmany:]...)
-			b.Lines[c.Line] = line
-		}
-	}
-	b.Modified = true
 }
 
 // RemoveBetweenCursors removes all characters between start/end cursors (inclusive),
@@ -308,7 +255,8 @@ func (b *Buffer) RemoveBetweenCursors(start, end *Cursor) *Buffer {
 	}
 	// We could check if start.IsBefore(end) and only act if true
 	if end.Line > start.Line {
-		first := b.Lines[start.Line][start.Pos:].Copy()
+		//first := b.Lines[start.Line][start.Pos:].Copy()
+		first, before := b.Lines[start.Line].Split(start.Pos)
 		res.Lines = append(res.Lines, first)
 
 		middleSize := end.Line - start.Line - 1
@@ -318,10 +266,12 @@ func (b *Buffer) RemoveBetweenCursors(start, end *Cursor) *Buffer {
 			res.Lines = append(res.Lines, middle...)
 		}
 
-		last := b.Lines[end.Line][:end.Pos+1].Copy()
+		//last := b.Lines[end.Line][:end.Pos+1].Copy()
+		last, after := b.Lines[end.Line].Split(end.Pos + 1)
 		res.Lines = append(res.Lines, last)
 
-		b.Lines[start.Line] = append(b.Lines[start.Line][:start.Pos], b.Lines[end.Line][end.Pos+1:]...)
+		//b.Lines[start.Line] = append(b.Lines[start.Line][:start.Pos], b.Lines[end.Line][end.Pos+1:]...)
+		b.Lines[start.Line] = NewLine().Join(before).Join(after)
 
 		// remove "end" line, since it was joined with start-line
 		b.Lines = append(b.Lines[:end.Line], b.Lines[end.Line+1:]...)
@@ -330,8 +280,9 @@ func (b *Buffer) RemoveBetweenCursors(start, end *Cursor) *Buffer {
 			b.Lines = append(b.Lines[:start.Line+1], b.Lines[end.Line:]...)
 		}
 	} else { // removal is on same start/endline.
-		part := b.Lines[start.Line][start.Pos : end.Pos+1].Copy()
-		b.Lines[start.Line] = append(b.Lines[start.Line][:start.Pos], b.Lines[end.Line][end.Pos+1:]...)
+		// part := b.Lines[start.Line][start.Pos : end.Pos+1].Copy()
+		// b.Lines[start.Line] = append(b.Lines[start.Line][:start.Pos], b.Lines[end.Line][end.Pos+1:]...)
+		part := b.Lines[start.Line].Cut(start.Pos, end.Pos+1)
 		res.Lines = append(res.Lines, part)
 	}
 	b.Modified = true

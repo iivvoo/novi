@@ -27,7 +27,7 @@ func AssertBufferMatch(t *testing.T, b *Buffer, expected ...string) {
 		if i >= b.Length() {
 			break
 		}
-		if got := string(b.Lines[i]); e != got {
+		if got := b.Lines[i].ToString(); e != got {
 			t.Errorf("First mismatch at line %d\nexpected: %s\ngot     : %s", i, e, got)
 		}
 	}

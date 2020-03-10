@@ -15,7 +15,7 @@ func TestBuffer(t *testing.T) {
 	})
 	t.Run("AddLine on empty buffer", func(t *testing.T) {
 		b := BuildBuffer()
-		b.AddLine(Line(""))
+		b.AddLine(NewLineFromString(""))
 
 		AssertBufferMatch(t, b, "", "")
 		AssertBufferModified(t, b, true)

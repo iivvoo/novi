@@ -1,4 +1,4 @@
-package viemu
+package novi
 
 import "testing"
 

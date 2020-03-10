@@ -8,8 +8,8 @@ import (
 // if pastEnd is true we allow the cursor to be placed past the last character,
 // which Vi does in edit mode
 func (em *Vi) Move(c *novi.Cursor, movement novi.CursorDirection) {
-	maxPos := func(l novi.Line) int {
-		limit := len(c.Buffer.Lines[c.Line])
+	maxPos := func(l *novi.Line) int {
+		limit := c.Buffer.Lines[c.Line].Len()
 		if em.Mode == ModeCommand {
 			return limit
 		}
@@ -37,7 +37,7 @@ func (em *Vi) Move(c *novi.Cursor, movement novi.CursorDirection) {
 	case novi.CursorBegin:
 		c.Pos = 0
 	case novi.CursorEnd:
-		c.Pos = len(c.Buffer.Lines[c.Line]) - 1
+		c.Pos = c.Buffer.Lines[c.Line].Len() - 1
 		if c.Pos < 0 {
 			c.Pos = 0
 		}

@@ -111,7 +111,7 @@ func (e *Editor) SaveFile(name string, force bool) error {
 	w := bufio.NewWriter(f)
 
 	for _, line := range e.Buffer.Lines {
-		if _, err := w.WriteString(string(line) + "\n"); err != nil {
+		if _, err := w.WriteString(line.ToString() + "\n"); err != nil {
 			log.Printf("Failed to Write %s: %v", e.filename, err)
 			return ErrSaveWrite
 		}

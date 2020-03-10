@@ -49,8 +49,8 @@ func (c *Cursor) Validate() bool {
 		c.Line = 0
 		c.Pos = 0
 		valid = false
-	} else if c.Pos >= len(c.Buffer.Lines[c.Line]) {
-		c.Pos = len(c.Buffer.Lines[c.Line]) - 1
+	} else if c.Pos >= c.Buffer.Lines[c.Line].Len() {
+		c.Pos = c.Buffer.Lines[c.Line].Len() - 1
 		if c.Pos < 0 {
 			c.Pos = 0
 		}

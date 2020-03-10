@@ -10,16 +10,16 @@ func Move(c *novi.Cursor, movement novi.CursorDirection) {
 	case novi.CursorUp:
 		if c.Line > 0 {
 			c.Line--
-			if c.Pos > len(c.Buffer.Lines[c.Line]) {
-				c.Pos = len(c.Buffer.Lines[c.Line])
+			if c.Pos > c.Buffer.Lines[c.Line].Len() {
+				c.Pos = c.Buffer.Lines[c.Line].Len()
 			}
 		}
 	case novi.CursorDown:
 		// weirdness because empty last line that we want to position on
 		if c.Line < len(c.Buffer.Lines)-1 {
 			c.Line++
-			if c.Pos > len(c.Buffer.Lines[c.Line]) {
-				c.Pos = len(c.Buffer.Lines[c.Line])
+			if c.Pos > c.Buffer.Lines[c.Line].Len() {
+				c.Pos = c.Buffer.Lines[c.Line].Len()
 			}
 		}
 	case novi.CursorLeft:
@@ -27,10 +27,10 @@ func Move(c *novi.Cursor, movement novi.CursorDirection) {
 			c.Pos--
 		} else if c.Line > 0 {
 			c.Line--
-			c.Pos = len(c.Buffer.Lines[c.Line])
+			c.Pos = c.Buffer.Lines[c.Line].Len()
 		}
 	case novi.CursorRight:
-		if c.Pos < len(c.Buffer.Lines[c.Line]) {
+		if c.Pos < c.Buffer.Lines[c.Line].Len() {
 			c.Pos++
 		} else if c.Line < len(c.Buffer.Lines)-1 {
 			c.Line++
@@ -40,6 +40,6 @@ func Move(c *novi.Cursor, movement novi.CursorDirection) {
 		c.Pos = 0
 	case novi.CursorEnd:
 		// move *past* the end
-		c.Pos = len(c.Buffer.Lines[c.Line])
+		c.Pos = c.Buffer.Lines[c.Line].Len()
 	}
 }

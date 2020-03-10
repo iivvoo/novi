@@ -317,7 +317,7 @@ func (em *Vi) HandleToModeCommand(novi.Event) bool {
 	em.Mode = ModeCommand
 	// Make sure no cursors are past the end
 	for _, c := range em.Editor.Cursors {
-		if l := len(em.Editor.Buffer.Lines[c.Line]) - 1; l >= 0 && c.Pos > l {
+		if l := em.Editor.Buffer.Lines[c.Line].Len() - 1; l >= 0 && c.Pos > l {
 			c.Pos = l
 		}
 	}
@@ -362,7 +362,7 @@ func (em *Vi) ReplaceDeleteWords(howmany int, change bool) {
 			end.Pos--
 		} else if end.Line > 0 {
 			end.Line--
-			end.Pos = len(em.Editor.Buffer.Lines[end.Line]) - 1
+			end.Pos = em.Editor.Buffer.Lines[end.Line].Len() - 1
 		}
 		em.Editor.Buffer.RemoveBetweenCursors(first, end)
 	}

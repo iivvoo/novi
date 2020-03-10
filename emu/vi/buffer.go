@@ -39,15 +39,15 @@ func GetRuneType(r rune) RuneType {
 }
 
 // WordStarts Finds al the "word starts" in a given line
-func WordStarts(l novi.Line, SepAndAlnum bool) []int {
-	if len(l) == 0 {
+func WordStarts(l *novi.Line, SepAndAlnum bool) []int {
+	if l.Len() == 0 {
 		return []int{0}
 	}
 
 	var res []int
 
 	prevRune := TypeUnknown
-	for pos, c := range l {
+	for pos, c := range l.AllRunes() {
 		newRune := GetRuneType(c)
 
 		if SepAndAlnum && newRune == TypeSep {
@@ -67,16 +67,17 @@ func WordStarts(l novi.Line, SepAndAlnum bool) []int {
 // e,g ab123 []=-- or sequences of alphanum *and* non-ws
 // This. is a?!@ sentence...
 //    ^^  ^
-func WordEnds(l novi.Line, SepAndAlnum bool) []int {
-	if len(l) == 0 {
+func WordEnds(l *novi.Line, SepAndAlnum bool) []int {
+	if l.Len() == 0 {
 		return []int{0}
 	}
 
 	var res []int
 
 	prevRune := TypeUnknown
-	for i := len(l) - 1; i >= 0; i-- {
-		newRune := GetRuneType(l[i])
+	r := l.AllRunes() // XXX
+	for i := l.Len() - 1; i >= 0; i-- {
+		newRune := GetRuneType(r[i])
 
 		// treat separators like alnum?
 		if SepAndAlnum && newRune == TypeSep {
@@ -109,7 +110,7 @@ func JumpAlNumSepForward(b *novi.Buffer, c *novi.Cursor, alnumSepSame bool) (int
 		pos = -1 // make sure we're really smaller, so we will match on pos 0
 		line++
 	}
-	return b.Length() - 1, len(b.Lines[b.Length()-1]) - 1
+	return b.Length() - 1, b.Lines[b.Length()-1].Len() - 1
 }
 
 // JumpForward jumps to the next sequence of alphanum or separators, skipping whitespace
@@ -148,7 +149,7 @@ func JumpAlNumSepBackward(b *novi.Buffer, c *novi.Cursor, alnumSepSame bool) (in
 		// continue to the next line, position cursor at the end
 		line--
 		if line >= 0 {
-			pos = len(b.Lines[line]) + 1 // add one so we're larger than a match at the end
+			pos = b.Lines[line].Len() + 1 // add one so we're larger than a match at the end
 		}
 	}
 	return 0, 0
@@ -182,7 +183,7 @@ func JumpAlNumSepForwardEnd(b *novi.Buffer, c *novi.Cursor, alnumSepSame bool) (
 		pos = -1 // make sure we're really smaller, so we will match on pos 0
 		line++
 	}
-	return b.Length() - 1, len(b.Lines[b.Length()-1]) - 1
+	return b.Length() - 1, b.Lines[b.Length()-1].Len() - 1
 }
 
 // JumpForwardEnd implements "b" behaviour, the beginning of the previous sequence of alphanum or other non-whitespace
