@@ -53,13 +53,12 @@ func (l *Line) ToString() string {
 	return string(l.runes)
 }
 
-// NEED TEST
-
+// AllRunes returns all the runes in the line
 func (l *Line) AllRunes() []rune {
 	return l.runes
 }
 
-// NEED TEST
+// GetRunes returns the runes from start up to (not including) end (like slicing)
 func (l *Line) GetRunes(start, end int) []rune {
 	if start > len(l.runes) {
 		return nil
@@ -73,20 +72,19 @@ func (l *Line) GetRunes(start, end int) []rune {
 	return l.runes[start:end].Copy()
 }
 
-// NEED TEST
+// Split splits the line in two parts, before / after pos
 func (l *Line) Split(pos int) (*Line, *Line) {
 	before, after := l.runes[:pos].Copy(), l.runes[pos:].Copy()
 	return &Line{before}, &Line{after}
 }
 
-// NEED TEST
+// Join joins other "in-place", returning the new line
 func (l *Line) Join(other *Line) *Line {
 	l.runes = append(l.runes, other.runes...)
 	return l
 }
 
-// NEED TEST
-// Remove part from line, return it as new line
+// Cut removes part from line, return it as new line
 func (l *Line) Cut(start, end int) *Line {
 	part := l.runes[start:end].Copy()
 	l.runes = append(l.runes[:start], l.runes[end:]...)
