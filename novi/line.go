@@ -75,7 +75,7 @@ func (l *Line) GetRunes(start, end int) []rune {
 
 // NEED TEST
 func (l *Line) Split(pos int) (*Line, *Line) {
-	before, after := l.runes[pos:].Copy(), l.runes[:pos].Copy()
+	before, after := l.runes[:pos].Copy(), l.runes[pos:].Copy()
 	return &Line{before}, &Line{after}
 }
 

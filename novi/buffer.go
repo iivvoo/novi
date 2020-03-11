@@ -156,7 +156,7 @@ func (b *Buffer) SplitLine(c *Cursor) {
 	line := b.Lines[c.Line]
 	before, after := line.Split(c.Pos)
 	b.Lines = append(b.Lines[:c.Line],
-		append([]*Line{after, before}, b.Lines[c.Line+1:]...)...)
+		append([]*Line{before, after}, b.Lines[c.Line+1:]...)...)
 	b.Modified = true
 }
 
@@ -244,6 +244,11 @@ func (b *Buffer) RemoveCharacters(c *Cursor, before bool, howmany int) *Buffer {
 	return b.RemoveBetweenCursors(c, b.NewCursor(c.Line, endPos))
 }
 
+// func (l *Line) Split(pos int) (*Line, *Line) {
+// 	before, after := l.runes[:pos].Copy(), l.runes[pos:].Copy()
+// 	return &Line{before}, &Line{after}
+// }
+
 // RemoveBetweenCursors removes all characters between start/end cursors (inclusive),
 // across (entire) multiple lines if necessary. Returns the removed part as buffer
 // Not suitable for block selections
@@ -256,7 +261,7 @@ func (b *Buffer) RemoveBetweenCursors(start, end *Cursor) *Buffer {
 	// We could check if start.IsBefore(end) and only act if true
 	if end.Line > start.Line {
 		//first := b.Lines[start.Line][start.Pos:].Copy()
-		first, before := b.Lines[start.Line].Split(start.Pos)
+		before, first := b.Lines[start.Line].Split(start.Pos)
 		res.Lines = append(res.Lines, first)
 
 		middleSize := end.Line - start.Line - 1
