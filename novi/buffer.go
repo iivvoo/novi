@@ -244,11 +244,6 @@ func (b *Buffer) RemoveCharacters(c *Cursor, before bool, howmany int) *Buffer {
 	return b.RemoveBetweenCursors(c, b.NewCursor(c.Line, endPos))
 }
 
-// func (l *Line) Split(pos int) (*Line, *Line) {
-// 	before, after := l.runes[:pos].Copy(), l.runes[pos:].Copy()
-// 	return &Line{before}, &Line{after}
-// }
-
 // RemoveBetweenCursors removes all characters between start/end cursors (inclusive),
 // across (entire) multiple lines if necessary. Returns the removed part as buffer
 // Not suitable for block selections
@@ -260,7 +255,6 @@ func (b *Buffer) RemoveBetweenCursors(start, end *Cursor) *Buffer {
 	}
 	// We could check if start.IsBefore(end) and only act if true
 	if end.Line > start.Line {
-		//first := b.Lines[start.Line][start.Pos:].Copy()
 		before, first := b.Lines[start.Line].Split(start.Pos)
 		res.Lines = append(res.Lines, first)
 
@@ -271,22 +265,17 @@ func (b *Buffer) RemoveBetweenCursors(start, end *Cursor) *Buffer {
 			res.Lines = append(res.Lines, middle...)
 		}
 
-		//last := b.Lines[end.Line][:end.Pos+1].Copy()
 		last, after := b.Lines[end.Line].Split(end.Pos + 1)
 		res.Lines = append(res.Lines, last)
 
-		//b.Lines[start.Line] = append(b.Lines[start.Line][:start.Pos], b.Lines[end.Line][end.Pos+1:]...)
 		b.Lines[start.Line] = NewLine().Join(before).Join(after)
 
-		// remove "end" line, since it was joined with start-line
 		b.Lines = append(b.Lines[:end.Line], b.Lines[end.Line+1:]...)
 		// now remove the middle part
 		if middleSize > 0 {
 			b.Lines = append(b.Lines[:start.Line+1], b.Lines[end.Line:]...)
 		}
 	} else { // removal is on same start/endline.
-		// part := b.Lines[start.Line][start.Pos : end.Pos+1].Copy()
-		// b.Lines[start.Line] = append(b.Lines[start.Line][:start.Pos], b.Lines[end.Line][end.Pos+1:]...)
 		part := b.Lines[start.Line].Cut(start.Pos, end.Pos+1)
 		res.Lines = append(res.Lines, part)
 	}
