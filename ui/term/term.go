@@ -160,20 +160,22 @@ func (t *TermUI) Render() {
  * It does mean the -1 compensation won't make sense
  */
 
+// TCellUI contains all state relevant to rendering using tcell
 type TCellUI struct {
 	baseX, baseY, width, height int
 	screen                      tcell.Screen
 }
 
+// NewTCellUI creates a new instance
 func NewTCellUI(screen tcell.Screen, baseX, baseY, width, height int) *TCellUI {
 	return &TCellUI{baseX, baseY, width, height, screen}
 }
 
+// RenderTCellGutter renders the numbering (and more) gutter
 func (t *TCellUI) RenderTCellGutter(start, end int, guttersize int) {
 	// drawGutter should decide size, return it,
 	// should perhaps check if numbering is enabled
 
-	// we need an upper limit - not all rows my be in use
 	for y := 0; y < t.height; y++ {
 		l := ""
 		lineno := y + start
@@ -189,6 +191,7 @@ func (t *TCellUI) RenderTCellGutter(start, end int, guttersize int) {
 	}
 }
 
+// RenderTCell renders the editor using the tcell toolkit
 func (t *TCellUI) RenderTCell(editor *novi.Editor) {
 	guttersize := 4 // 3 for numbers, 1 space)
 
@@ -247,19 +250,23 @@ func (t *TCellUI) RenderTCell(editor *novi.Editor) {
 	}
 }
 
+// TCellNoviUI contains Novi specific functionalitie (notably: statusbar, input)
 type TCellNoviUI struct {
 	*TCellUI
 }
 
+// NewTCellNoviUI creates a new instance
 func NewTCellNoviUI(screen tcell.Screen, baseX, baseY, width, height int) *TCellNoviUI {
 	return &TCellNoviUI{&TCellUI{baseX, baseY, width, height, screen}}
 }
 
+// RenderTCellInput renders the bar in input mode/state
 func (t *TCellNoviUI) RenderTCellInput(s string, inputPos int) {
 	t.RenderTCellBottomRow(s, false)
 	t.screen.ShowCursor(t.baseX+inputPos, t.baseY+t.height-1)
 }
 
+// RenderTCellBottomRow renders the bottom row (status, error or input)
 func (t *TCellNoviUI) RenderTCellBottomRow(s string, error bool) {
 	// Use the full available width to draw the row, but make sure
 	// status is truncated if too long
@@ -287,6 +294,7 @@ func (t *TCellNoviUI) RenderTCellBottomRow(s string, error bool) {
 	}
 }
 
+// RenderTCellStatusbar renders the statusbar in either error or status mode
 func (t *TCellNoviUI) RenderTCellStatusbar(err, status string) {
 	if err != "" {
 		t.RenderTCellBottomRow(err, true)
