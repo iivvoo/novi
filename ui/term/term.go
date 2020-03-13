@@ -178,26 +178,6 @@ func (t *TermUI) DrawInput() {
 	t.Screen.ShowCursor(t.inputPos, t.EditAreaHeight)
 }
 
-func (t *TermUI) drawGutter(start, end int, guttersize int) {
-	// drawGutter should decide size, return it,
-	// should perhaps check if numbering is enabled
-
-	// we need an upper limit - not all rows my be in use
-	for y := 0; y < t.EditAreaHeight-1; y++ {
-		l := ""
-		lineno := y + start
-		if lineno < end {
-			l = strconv.Itoa(start + y + 1)
-		}
-		for len(l) < guttersize-1 {
-			l = " " + l
-		}
-		for x, r := range l {
-			t.Screen.SetContent(x, y, r, nil, tcell.StyleDefault)
-		}
-	}
-}
-
 /*
  Rendering on the screen always starts at (0,0), but characters taken from
  the editor are from a specific viewport
@@ -209,11 +189,46 @@ func (t *TermUI) Render() {
 	   It will be set to terminal H/W if not set, so it's actually the entire area to use
 	*/
 
+	RenderTCell(t.Screen, t.Editor, 0, 0, t.EditAreaWidth, t.EditAreaHeight)
+
+	// DrawInput may draw a cursor that has to override the main one
+	// (tcell doesn't support multiple cursors?)
+	// (but we may able to simulate those)
+	if t.Source == MainSource {
+		t.DrawStatusbar()
+	} else {
+		t.DrawInput()
+	}
+
+	t.Screen.Sync()
+}
+
+func RenderTCellGutter(screen tcell.Screen, baseX, baseY, width, height, start, end int, guttersize int) {
+	// drawGutter should decide size, return it,
+	// should perhaps check if numbering is enabled
+
+	// we need an upper limit - not all rows my be in use
+	for y := 0; y < height-1; y++ {
+		l := ""
+		lineno := y + start
+		if lineno < end {
+			l = strconv.Itoa(start + y + 1)
+		}
+		for len(l) < guttersize-1 {
+			l = " " + l
+		}
+		for x, r := range l {
+			screen.SetContent(baseX+x, baseY+y, r, nil, tcell.StyleDefault)
+		}
+	}
+}
+
+func RenderTCell(screen tcell.Screen, editor *novi.Editor, baseX, baseY, width, height int) {
 	guttersize := 4 // 3 for numbers, 1 space)
 
-	editWidth, editHeight := t.EditAreaWidth-guttersize, t.EditAreaHeight-1
+	editWidth, editHeight := width-guttersize, height-1
 
-	primaryCursor := t.Editor.Cursors[0]
+	primaryCursor := editor.Cursors[0]
 
 	ViewportX, ViewportY := 0, 0
 
@@ -236,49 +251,32 @@ func (t *TermUI) Render() {
 	 * to clear any remainders. THe latter is relevant when scrolling, for example
 	 */
 	y := 0
-	for _, line := range t.Editor.Buffer.GetLines(ViewportY, ViewportY+editHeight) {
+	for _, line := range editor.Buffer.GetLines(ViewportY, ViewportY+editHeight) {
 		x := 0
 		for _, rune := range line.GetRunes(ViewportX, ViewportX+editWidth) {
-			t.Screen.SetContent(x+guttersize, y, rune, nil, tcell.StyleDefault)
+			screen.SetContent(baseX+x+guttersize, baseY+y, rune, nil, tcell.StyleDefault)
 			x++
 		}
 		for x < editWidth {
-			t.Screen.SetContent(x+guttersize, y, ' ', nil, tcell.StyleDefault)
+			screen.SetContent(baseX+x+guttersize, baseY+y, ' ', nil, tcell.StyleDefault)
 			x++
 		}
 		y++
 	}
-	// We draw the gutter now because y contains the number of lines actually drawn (may be
-	// at EOF), but eventually we'll need to do the math upfront and even let drawGutter calc is
-	// own size
-	t.drawGutter(ViewportY, ViewportY+y, guttersize)
+
+	RenderTCellGutter(screen, baseX, baseY, width, height, ViewportY, ViewportY+y, guttersize)
 
 	for y < editHeight {
-		for x := guttersize; x < editWidth+guttersize; x++ {
-			t.Screen.SetContent(x, y, ' ', nil, tcell.StyleDefault)
+		for x := 0; x < editWidth; x++ {
+			screen.SetContent(baseX+x+guttersize, baseY+y, ' ', nil, tcell.StyleDefault)
 		}
 		y++
 	}
 	// To make the cursor blink, show/hide it?
-	for _, cursor := range t.Editor.Cursors {
+	for _, cursor := range editor.Cursors {
 		if cursor.Line != -1 {
-			t.Screen.ShowCursor(cursor.Pos-ViewportX+guttersize, cursor.Line-ViewportY)
+			screen.ShowCursor(baseX+cursor.Pos-ViewportX+guttersize, baseY+cursor.Line-ViewportY)
 		}
 		// else probably show at (0,0)
 	}
-
-	// DrawInput may draw a cursor that has to override the main one
-	// (tcell doesn't support multiple cursors?)
-	// (but we may able to simulate those)
-	if t.Source == MainSource {
-		t.DrawStatusbar()
-	} else {
-		t.DrawInput()
-	}
-
-	t.Screen.Sync()
-}
-
-func RenderTCell(screen tcell.Screen, baseX, baseY, width, height int) {
-
 }
