@@ -143,7 +143,7 @@ func (t *TermUI) SetError(message string) {
  the editor are from a specific viewport
 */
 func (t *TermUI) Render() {
-	ui := NewTCellNoviUI(t.Screen, 0, 0, t.EditAreaWidth, t.EditAreaHeight)
+	ui := NewTCellNoviUI(t.Screen, 0, 0, t.EditAreaWidth, t.EditAreaHeight-1)
 	ui.RenderTCell(t.Editor)
 
 	if t.Source == MainSource {
@@ -174,7 +174,7 @@ func (t *TCellUI) RenderTCellGutter(start, end int, guttersize int) {
 	// should perhaps check if numbering is enabled
 
 	// we need an upper limit - not all rows my be in use
-	for y := 0; y < t.height-1; y++ {
+	for y := 0; y < t.height; y++ {
 		l := ""
 		lineno := y + start
 		if lineno < end {
@@ -192,7 +192,7 @@ func (t *TCellUI) RenderTCellGutter(start, end int, guttersize int) {
 func (t *TCellUI) RenderTCell(editor *novi.Editor) {
 	guttersize := 4 // 3 for numbers, 1 space)
 
-	editWidth, editHeight := t.width-guttersize, t.height-1
+	editWidth, editHeight := t.width-guttersize, t.height
 
 	primaryCursor := editor.Cursors[0]
 
@@ -271,7 +271,7 @@ func (t *TCellNoviUI) RenderTCellBottomRow(s string, error bool) {
 		style = style.Foreground(tcell.ColorWhite).Background(tcell.ColorRed)
 	}
 
-	rowY := t.height - 1
+	rowY := t.height
 
 	if len(s) > t.width {
 		s = s[:t.width]

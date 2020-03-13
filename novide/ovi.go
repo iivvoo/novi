@@ -63,61 +63,10 @@ func (o *Ovi) SetChan(c chan novi.Event) {
 func (o *Ovi) TviewRender(screen tcell.Screen, xx, yy, width, height int) (int, int, int, int) {
 	ui := termui.NewTCellUI(screen, xx, yy, width, height)
 	ui.RenderTCell(o.Editor)
-	return 0, 0, 0, 0
-}
-
-func (o *Ovi) xTviewRender(screen tcell.Screen, xx, yy, width, height int) (int, int, int, int) {
-	primaryCursor := o.Editor.Cursors[0]
-	if primaryCursor.Pos > o.ViewportX+width-1 {
-		o.ViewportX = primaryCursor.Pos - (width - 1)
-	}
-	if primaryCursor.Pos < o.ViewportX {
-		o.ViewportX = primaryCursor.Pos
-	}
-
-	if primaryCursor.Line > o.ViewportY+height-1 {
-		o.ViewportY = primaryCursor.Line - (height - 1)
-	}
-	if primaryCursor.Line < o.ViewportY {
-		o.ViewportY = primaryCursor.Line
-	}
-
-	// Statusbar: get it from IDE or include in area?
-
-	y := 0
-	for _, line := range o.Editor.Buffer.GetLines(o.ViewportY, o.ViewportY+height) {
-		x := 0
-		for _, rune := range line.GetRunes(o.ViewportX, o.ViewportX+width) {
-			screen.SetContent(xx+x, yy+y, rune, nil, tcell.StyleDefault)
-			x++
-		}
-		for x < width {
-			screen.SetContent(xx+x, yy+y, ' ', nil, tcell.StyleDefault)
-			x++
-		}
-		y++
-	}
-	for y < height {
-		for x := 0; x < width; x++ {
-			screen.SetContent(xx+x, yy+y, ' ', nil, tcell.StyleDefault)
-		}
-		y++
-	}
 	if o.Source == CommandSource {
 		x, y, _, _ := o.statusArea.GetInnerRect()
 		screen.ShowCursor(x+o.InputPos, y)
-	} else {
-		// To make the cursor blink, show/hide it?
-		for _, cursor := range o.Editor.Cursors {
-			if cursor.Line != -1 {
-				screen.ShowCursor(xx+cursor.Pos-o.ViewportX, yy+cursor.Line-o.ViewportY)
-			}
-			// else probably show at (0,0)
-		}
 	}
-
-	// A bit hacky: set the cursor on statusArea if it's in input mode
-	// Leave nothing for other components
 	return 0, 0, 0, 0
 }
 
