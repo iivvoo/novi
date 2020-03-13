@@ -137,7 +137,43 @@ func (t *TermUI) SetError(message string) {
 		t.Render()
 	}()
 }
-func (t *TermUI) drawBottomRow(s string, error bool) {
+
+/*
+ Rendering on the screen always starts at (0,0), but characters taken from
+ the editor are from a specific viewport
+*/
+func (t *TermUI) Render() {
+	ui := NewTCellUI(t.Screen, 0, 0, t.EditAreaWidth, t.EditAreaHeight)
+	ui.RenderTCell(t.Editor)
+
+	if t.Source == MainSource {
+		ui.RenderTCellStatusbar(t.Error, t.Status)
+	} else {
+		ui.RenderTCellInput(t.prompt+t.input, t.inputPos)
+	}
+
+	t.Screen.Sync()
+}
+
+/*
+ * wrap in a struct anyway containing tcell.Screen, baseX, baseY, width, height?
+ */
+
+type TCellUI struct {
+	baseX, baseY, width, height int
+	screen                      tcell.Screen
+}
+
+func NewTCellUI(screen tcell.Screen, baseX, baseY, width, height int) *TCellUI {
+	return &TCellUI{baseX, baseY, width, height, screen}
+}
+
+func (t *TCellUI) RenderTCellInput(s string, inputPos int) {
+	t.RenderTCellBottomRow(s, false)
+	t.screen.ShowCursor(t.baseX+inputPos, t.baseY+t.height-1)
+}
+
+func (t *TCellUI) RenderTCellBottomRow(s string, error bool) {
 	// Use the full available width to draw the row, but make sure
 	// status is truncated if too long
 	x := 0
@@ -148,67 +184,35 @@ func (t *TermUI) drawBottomRow(s string, error bool) {
 		style = style.Foreground(tcell.ColorWhite).Background(tcell.ColorRed)
 	}
 
-	rowY := t.EditAreaHeight - 1
-	width := t.EditAreaWidth
+	rowY := t.height - 1
 
-	if len(s) > width {
-		s = s[:width]
+	if len(s) > t.width {
+		s = s[:t.width]
 	}
 
 	for _, r := range s { // XXX May overflow
-		t.Screen.SetContent(x, rowY, r, nil, style)
+		t.screen.SetContent(t.baseX+x, t.baseY+rowY, r, nil, style)
 		x++
 	}
-	for x < t.EditAreaWidth {
-		t.Screen.SetContent(x, rowY, ' ', nil, tcell.StyleDefault)
+	for x < t.width {
+		t.screen.SetContent(t.baseX+x, t.baseY+rowY, ' ', nil, tcell.StyleDefault)
 		x++
 	}
-
 }
-func (t *TermUI) DrawStatusbar() {
-	if t.Error != "" {
-		t.drawBottomRow(t.Error, true)
+
+func (t *TCellUI) RenderTCellStatusbar(err, status string) {
+	if err != "" {
+		t.RenderTCellBottomRow(err, true)
 	} else {
-		t.drawBottomRow(t.Status, false)
+		t.RenderTCellBottomRow(status, false)
 	}
 }
-
-func (t *TermUI) DrawInput() {
-	t.drawBottomRow(t.prompt+t.input, false)
-	t.Screen.ShowCursor(t.inputPos, t.EditAreaHeight)
-}
-
-/*
- Rendering on the screen always starts at (0,0), but characters taken from
- the editor are from a specific viewport
-*/
-func (t *TermUI) Render() {
-	/*
-	   t.EditAreaWidth is the size of the editor, t.EditAreaHeight the height.
-	   Should this be purely the editing size, or also include statusbar, line gutter?
-	   It will be set to terminal H/W if not set, so it's actually the entire area to use
-	*/
-
-	RenderTCell(t.Screen, t.Editor, 0, 0, t.EditAreaWidth, t.EditAreaHeight)
-
-	// DrawInput may draw a cursor that has to override the main one
-	// (tcell doesn't support multiple cursors?)
-	// (but we may able to simulate those)
-	if t.Source == MainSource {
-		t.DrawStatusbar()
-	} else {
-		t.DrawInput()
-	}
-
-	t.Screen.Sync()
-}
-
-func RenderTCellGutter(screen tcell.Screen, baseX, baseY, width, height, start, end int, guttersize int) {
+func (t *TCellUI) RenderTCellGutter(start, end int, guttersize int) {
 	// drawGutter should decide size, return it,
 	// should perhaps check if numbering is enabled
 
 	// we need an upper limit - not all rows my be in use
-	for y := 0; y < height-1; y++ {
+	for y := 0; y < t.height-1; y++ {
 		l := ""
 		lineno := y + start
 		if lineno < end {
@@ -218,15 +222,15 @@ func RenderTCellGutter(screen tcell.Screen, baseX, baseY, width, height, start, 
 			l = " " + l
 		}
 		for x, r := range l {
-			screen.SetContent(baseX+x, baseY+y, r, nil, tcell.StyleDefault)
+			t.screen.SetContent(t.baseX+x, t.baseY+y, r, nil, tcell.StyleDefault)
 		}
 	}
 }
 
-func RenderTCell(screen tcell.Screen, editor *novi.Editor, baseX, baseY, width, height int) {
+func (t *TCellUI) RenderTCell(editor *novi.Editor) {
 	guttersize := 4 // 3 for numbers, 1 space)
 
-	editWidth, editHeight := width-guttersize, height-1
+	editWidth, editHeight := t.width-guttersize, t.height-1
 
 	primaryCursor := editor.Cursors[0]
 
@@ -254,28 +258,28 @@ func RenderTCell(screen tcell.Screen, editor *novi.Editor, baseX, baseY, width, 
 	for _, line := range editor.Buffer.GetLines(ViewportY, ViewportY+editHeight) {
 		x := 0
 		for _, rune := range line.GetRunes(ViewportX, ViewportX+editWidth) {
-			screen.SetContent(baseX+x+guttersize, baseY+y, rune, nil, tcell.StyleDefault)
+			t.screen.SetContent(t.baseX+x+guttersize, t.baseY+y, rune, nil, tcell.StyleDefault)
 			x++
 		}
 		for x < editWidth {
-			screen.SetContent(baseX+x+guttersize, baseY+y, ' ', nil, tcell.StyleDefault)
+			t.screen.SetContent(t.baseX+x+guttersize, t.baseY+y, ' ', nil, tcell.StyleDefault)
 			x++
 		}
 		y++
 	}
 
-	RenderTCellGutter(screen, baseX, baseY, width, height, ViewportY, ViewportY+y, guttersize)
+	t.RenderTCellGutter(ViewportY, ViewportY+y, guttersize)
 
 	for y < editHeight {
 		for x := 0; x < editWidth; x++ {
-			screen.SetContent(baseX+x+guttersize, baseY+y, ' ', nil, tcell.StyleDefault)
+			t.screen.SetContent(t.baseX+x+guttersize, t.baseY+y, ' ', nil, tcell.StyleDefault)
 		}
 		y++
 	}
 	// To make the cursor blink, show/hide it?
 	for _, cursor := range editor.Cursors {
 		if cursor.Line != -1 {
-			screen.ShowCursor(baseX+cursor.Pos-ViewportX+guttersize, baseY+cursor.Line-ViewportY)
+			t.screen.ShowCursor(t.baseX+cursor.Pos-ViewportX+guttersize, t.baseY+cursor.Line-ViewportY)
 		}
 		// else probably show at (0,0)
 	}
