@@ -23,10 +23,10 @@ const (
 // TermUI contains state relevant to the terminal UI
 type TermUI struct {
 	// internal
-	Screen         tcell.Screen
-	Editor         *novi.Editor
-	EditAreaWidth  int
-	EditAreaHeight int
+	Screen tcell.Screen
+	Editor *novi.Editor
+	Width  int
+	Height int
 
 	Status string
 	Error  string
@@ -63,7 +63,7 @@ func NewTermUI(Editor *novi.Editor) *TermUI {
 
 // GetDimension returns the size of the UI
 func (t *TermUI) GetDimension() (int, int) {
-	return t.EditAreaWidth, t.EditAreaHeight
+	return t.Width, t.Height
 }
 
 // SetSize sets the desired size of the UI
@@ -72,9 +72,9 @@ func (t *TermUI) SetSize(width, height int) {
 		log.Printf("Can't set a width or height of 0: %d %d", width, height)
 		return
 	}
-	t.EditAreaWidth = width
-	t.EditAreaHeight = height
-	log.Printf("EditArea width, heigth set to %d, %d", width, height)
+	t.Width = width
+	t.Height = height
+	log.Printf(" width, heigth set to %d, %d", width, height)
 }
 
 // Finish is called when the UI can finish its operations
@@ -149,7 +149,7 @@ func (t *TermUI) SetError(message string) {
 
 // Render the temrinal UI using tcell
 func (t *TermUI) Render() {
-	ui := NewTCellNoviUI(t.Screen, 0, 0, t.EditAreaWidth, t.EditAreaHeight-1)
+	ui := NewTCellNoviUI(t.Screen, 0, 0, t.Width, t.Height-1)
 	ui.RenderTCell(t.Editor)
 
 	if t.Source == MainSource {
