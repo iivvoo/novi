@@ -237,13 +237,13 @@ func (t *TermUI) Render() {
 	 */
 	y := 0
 	for _, line := range t.Editor.Buffer.GetLines(ViewportY, ViewportY+editHeight) {
-		x := guttersize
+		x := 0
 		for _, rune := range line.GetRunes(ViewportX, ViewportX+editWidth) {
-			t.Screen.SetContent(x, y, rune, nil, tcell.StyleDefault)
+			t.Screen.SetContent(x+guttersize, y, rune, nil, tcell.StyleDefault)
 			x++
 		}
 		for x < editWidth {
-			t.Screen.SetContent(x, y, ' ', nil, tcell.StyleDefault)
+			t.Screen.SetContent(x+guttersize, y, ' ', nil, tcell.StyleDefault)
 			x++
 		}
 		y++
