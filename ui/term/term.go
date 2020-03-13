@@ -143,7 +143,7 @@ func (t *TermUI) SetError(message string) {
  the editor are from a specific viewport
 */
 func (t *TermUI) Render() {
-	ui := NewTCellUI(t.Screen, 0, 0, t.EditAreaWidth, t.EditAreaHeight)
+	ui := NewTCellNoviUI(t.Screen, 0, 0, t.EditAreaWidth, t.EditAreaHeight)
 	ui.RenderTCell(t.Editor)
 
 	if t.Source == MainSource {
@@ -169,45 +169,6 @@ func NewTCellUI(screen tcell.Screen, baseX, baseY, width, height int) *TCellUI {
 	return &TCellUI{baseX, baseY, width, height, screen}
 }
 
-func (t *TCellUI) RenderTCellInput(s string, inputPos int) {
-	t.RenderTCellBottomRow(s, false)
-	t.screen.ShowCursor(t.baseX+inputPos, t.baseY+t.height-1)
-}
-
-func (t *TCellUI) RenderTCellBottomRow(s string, error bool) {
-	// Use the full available width to draw the row, but make sure
-	// status is truncated if too long
-	x := 0
-
-	style := tcell.StyleDefault
-
-	if error {
-		style = style.Foreground(tcell.ColorWhite).Background(tcell.ColorRed)
-	}
-
-	rowY := t.height - 1
-
-	if len(s) > t.width {
-		s = s[:t.width]
-	}
-
-	for _, r := range s { // XXX May overflow
-		t.screen.SetContent(t.baseX+x, t.baseY+rowY, r, nil, style)
-		x++
-	}
-	for x < t.width {
-		t.screen.SetContent(t.baseX+x, t.baseY+rowY, ' ', nil, tcell.StyleDefault)
-		x++
-	}
-}
-
-func (t *TCellUI) RenderTCellStatusbar(err, status string) {
-	if err != "" {
-		t.RenderTCellBottomRow(err, true)
-	} else {
-		t.RenderTCellBottomRow(status, false)
-	}
-}
 func (t *TCellUI) RenderTCellGutter(start, end int, guttersize int) {
 	// drawGutter should decide size, return it,
 	// should perhaps check if numbering is enabled
@@ -283,5 +244,53 @@ func (t *TCellUI) RenderTCell(editor *novi.Editor) {
 			t.screen.ShowCursor(t.baseX+cursor.Pos-ViewportX+guttersize, t.baseY+cursor.Line-ViewportY)
 		}
 		// else probably show at (0,0)
+	}
+}
+
+type TCellNoviUI struct {
+	*TCellUI
+}
+
+func NewTCellNoviUI(screen tcell.Screen, baseX, baseY, width, height int) *TCellNoviUI {
+	return &TCellNoviUI{&TCellUI{baseX, baseY, width, height, screen}}
+}
+
+func (t *TCellNoviUI) RenderTCellInput(s string, inputPos int) {
+	t.RenderTCellBottomRow(s, false)
+	t.screen.ShowCursor(t.baseX+inputPos, t.baseY+t.height-1)
+}
+
+func (t *TCellNoviUI) RenderTCellBottomRow(s string, error bool) {
+	// Use the full available width to draw the row, but make sure
+	// status is truncated if too long
+	x := 0
+
+	style := tcell.StyleDefault
+
+	if error {
+		style = style.Foreground(tcell.ColorWhite).Background(tcell.ColorRed)
+	}
+
+	rowY := t.height - 1
+
+	if len(s) > t.width {
+		s = s[:t.width]
+	}
+
+	for _, r := range s { // XXX May overflow
+		t.screen.SetContent(t.baseX+x, t.baseY+rowY, r, nil, style)
+		x++
+	}
+	for x < t.width {
+		t.screen.SetContent(t.baseX+x, t.baseY+rowY, ' ', nil, tcell.StyleDefault)
+		x++
+	}
+}
+
+func (t *TCellNoviUI) RenderTCellStatusbar(err, status string) {
+	if err != "" {
+		t.RenderTCellBottomRow(err, true)
+	} else {
+		t.RenderTCellBottomRow(status, false)
 	}
 }
