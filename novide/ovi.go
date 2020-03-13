@@ -61,6 +61,12 @@ func (o *Ovi) SetChan(c chan novi.Event) {
 }
 
 func (o *Ovi) TviewRender(screen tcell.Screen, xx, yy, width, height int) (int, int, int, int) {
+	ui := termui.NewTCellUI(screen, xx, yy, width, height)
+	ui.RenderTCell(o.Editor)
+	return 0, 0, 0, 0
+}
+
+func (o *Ovi) xTviewRender(screen tcell.Screen, xx, yy, width, height int) (int, int, int, int) {
 	primaryCursor := o.Editor.Cursors[0]
 	if primaryCursor.Pos > o.ViewportX+width-1 {
 		o.ViewportX = primaryCursor.Pos - (width - 1)

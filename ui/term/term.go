@@ -156,7 +156,8 @@ func (t *TermUI) Render() {
 }
 
 /*
- * wrap in a struct anyway containing tcell.Screen, baseX, baseY, width, height?
+ * Only novi needs the statusbar - in novide it's separate controls. Embed in stead?
+ * It does mean the -1 compensation won't make sense
  */
 
 type TCellUI struct {
