@@ -23,12 +23,8 @@ type TermUI struct {
 	// internal
 	Screen         tcell.Screen
 	Editor         *novi.Editor
-	ViewportX      int
-	ViewportY      int
 	EditAreaWidth  int
 	EditAreaHeight int
-	Width          int
-	Height         int
 
 	Status string
 	Error  string
@@ -58,7 +54,7 @@ func NewTermUI(Editor *novi.Editor) *TermUI {
 	w, h := s.Size()
 	log.Printf("Term size w h: %d %d", w, h)
 	// adjust for statusbars and box, to be fixed XXX
-	tui := &TermUI{s, Editor, 0, 0, w, h, w, h, "", "", MainSource, 0, "", ""}
+	tui := &TermUI{s, Editor, w, h, "", "", MainSource, 0, "", ""}
 	return tui
 }
 
@@ -179,7 +175,7 @@ func (t *TermUI) DrawStatusbar() {
 
 func (t *TermUI) DrawInput() {
 	t.drawBottomRow(t.prompt+t.input, false)
-	t.Screen.ShowCursor(t.inputPos, t.Height-1)
+	t.Screen.ShowCursor(t.inputPos, t.EditAreaHeight)
 }
 
 func (t *TermUI) drawGutter(start, end int, guttersize int) {
@@ -215,22 +211,24 @@ func (t *TermUI) Render() {
 
 	guttersize := 4 // 3 for numbers, 1 space)
 
-	t.Width, t.Height = t.Screen.Size()
 	editWidth, editHeight := t.EditAreaWidth-guttersize, t.EditAreaHeight-1
 
 	primaryCursor := t.Editor.Cursors[0]
-	if primaryCursor.Pos > t.ViewportX+editWidth-1 {
-		t.ViewportX = primaryCursor.Pos - (editWidth - 1)
+
+	ViewportX, ViewportY := 0, 0
+
+	if primaryCursor.Pos > ViewportX+editWidth-1 {
+		ViewportX = primaryCursor.Pos - (editWidth - 1)
 	}
-	if primaryCursor.Pos < t.ViewportX {
-		t.ViewportX = primaryCursor.Pos
+	if primaryCursor.Pos < ViewportX {
+		ViewportX = primaryCursor.Pos
 	}
 
-	if primaryCursor.Line > t.ViewportY+editHeight-1 {
-		t.ViewportY = primaryCursor.Line - (editHeight - 1)
+	if primaryCursor.Line > ViewportY+editHeight-1 {
+		ViewportY = primaryCursor.Line - (editHeight - 1)
 	}
-	if primaryCursor.Line < t.ViewportY {
-		t.ViewportY = primaryCursor.Line
+	if primaryCursor.Line < ViewportY {
+		ViewportY = primaryCursor.Line
 	}
 
 	/*
@@ -238,9 +236,9 @@ func (t *TermUI) Render() {
 	 * to clear any remainders. THe latter is relevant when scrolling, for example
 	 */
 	y := 0
-	for _, line := range t.Editor.Buffer.GetLines(t.ViewportY, t.ViewportY+editHeight) {
+	for _, line := range t.Editor.Buffer.GetLines(ViewportY, ViewportY+editHeight) {
 		x := guttersize
-		for _, rune := range line.GetRunes(t.ViewportX, t.ViewportX+editWidth) {
+		for _, rune := range line.GetRunes(ViewportX, ViewportX+editWidth) {
 			t.Screen.SetContent(x, y, rune, nil, tcell.StyleDefault)
 			x++
 		}
@@ -253,7 +251,7 @@ func (t *TermUI) Render() {
 	// We draw the gutter now because y contains the number of lines actually drawn (may be
 	// at EOF), but eventually we'll need to do the math upfront and even let drawGutter calc is
 	// own size
-	t.drawGutter(t.ViewportY, t.ViewportY+y, guttersize)
+	t.drawGutter(ViewportY, ViewportY+y, guttersize)
 
 	for y < editHeight {
 		for x := guttersize; x < editWidth+guttersize; x++ {
@@ -264,7 +262,7 @@ func (t *TermUI) Render() {
 	// To make the cursor blink, show/hide it?
 	for _, cursor := range t.Editor.Cursors {
 		if cursor.Line != -1 {
-			t.Screen.ShowCursor(cursor.Pos-t.ViewportX+guttersize, cursor.Line-t.ViewportY)
+			t.Screen.ShowCursor(cursor.Pos-ViewportX+guttersize, cursor.Line-ViewportY)
 		}
 		// else probably show at (0,0)
 	}
@@ -279,4 +277,8 @@ func (t *TermUI) Render() {
 	}
 
 	t.Screen.Sync()
+}
+
+func RenderTCell(screen tcell.Screen, baseX, baseY, width, height int) {
+
 }
