@@ -38,7 +38,7 @@ type TermUI struct {
 	input    string
 }
 
-// NewTermUI creates a new terminal UI
+// NewTermUI creates / initializes a new terminal UI
 func NewTermUI(Editor *novi.Editor) *TermUI {
 	s, e := tcell.NewScreen()
 	if e != nil {
