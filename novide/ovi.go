@@ -15,12 +15,10 @@ const (
 	CommandSource novi.InputSource = 1
 )
 
-// implement the OviPrimitive
+// implement the Ovi Primitive
 type Ovi struct {
 	tview.Primitive
 	Editor     *novi.Editor
-	ViewportX  int
-	ViewportY  int
 	editArea   tview.Primitive
 	statusArea *tview.TextView
 	Source     novi.InputSource
@@ -31,18 +29,16 @@ type Ovi struct {
 }
 
 func NewOviPrimitive(e *novi.Editor) tview.Primitive {
-	x := tview.NewFlex().SetDirection(tview.FlexRow)
+	layout := tview.NewFlex().SetDirection(tview.FlexRow)
 
 	editArea := tview.NewBox()
 	statusArea := tview.NewTextView()
 	statusArea.SetDynamicColors(true)
-	x.AddItem(editArea, 0, 1, true)
-	x.AddItem(statusArea, 1, 1, false)
+	layout.AddItem(editArea, 0, 1, true)
+	layout.AddItem(statusArea, 1, 1, false)
 
 	o := &Ovi{
-		ViewportX:  0,
-		ViewportY:  0,
-		Primitive:  x,
+		Primitive:  layout,
 		Editor:     e,
 		editArea:   editArea,
 		statusArea: statusArea,
