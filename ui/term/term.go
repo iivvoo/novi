@@ -14,11 +14,13 @@ import (
 
 var log = logger.GetLogger("termui")
 
+// Identify the input source
 const (
 	MainSource       novi.InputSource = 0
 	MagicInputSource novi.InputSource = 31337
 )
 
+// TermUI contains state relevant to the terminal UI
 type TermUI struct {
 	// internal
 	Screen         tcell.Screen
@@ -36,6 +38,7 @@ type TermUI struct {
 	input    string
 }
 
+// NewTermUI creates a new terminal UI
 func NewTermUI(Editor *novi.Editor) *TermUI {
 	s, e := tcell.NewScreen()
 	if e != nil {
@@ -58,10 +61,12 @@ func NewTermUI(Editor *novi.Editor) *TermUI {
 	return tui
 }
 
+// GetDimension returns the size of the UI
 func (t *TermUI) GetDimension() (int, int) {
 	return t.EditAreaWidth, t.EditAreaHeight
 }
 
+// SetSize sets the desired size of the UI
 func (t *TermUI) SetSize(width, height int) {
 	if width == 0 || height == 0 {
 		log.Printf("Can't set a width or height of 0: %d %d", width, height)
@@ -72,10 +77,12 @@ func (t *TermUI) SetSize(width, height int) {
 	log.Printf("EditArea width, heigth set to %d, %d", width, height)
 }
 
+// Finish is called when the UI can finish its operations
 func (t *TermUI) Finish() {
 	t.Screen.Fini()
 }
 
+// AskInput opens/starts the input control
 func (t *TermUI) AskInput(prompt string) novi.InputSource {
 	if t.Source == MagicInputSource {
 		log.Println("term ui doesn't support more than one additional input!")
@@ -88,16 +95,19 @@ func (t *TermUI) AskInput(prompt string) novi.InputSource {
 	return MagicInputSource
 }
 
+// CloseInput closes the input control
 func (t *TermUI) CloseInput(source novi.InputSource) {
 	t.input = ""
 	t.Source = MainSource
 }
 
+// UpdateInput updates the input control
 func (t *TermUI) UpdateInput(source novi.InputSource, s string, pos int) {
 	t.input = s
 	t.inputPos = len(t.prompt) + pos
 }
 
+// Loop starts the UI loop (if any)
 func (t *TermUI) Loop(c chan novi.Event) {
 	go func() {
 		defer novi.RecoverFromPanic(func() {
@@ -106,9 +116,6 @@ func (t *TermUI) Loop(c chan novi.Event) {
 		for {
 			ev := t.Screen.PollEvent()
 
-			// if ev != nil {
-			// 	log.Printf("%+v", ev)
-			// }
 			switch ev := ev.(type) {
 			case *tcell.EventKey:
 				if k := MapTCellKey(ev); k != nil {
@@ -122,12 +129,14 @@ func (t *TermUI) Loop(c chan novi.Event) {
 	}()
 }
 
+// SetStatus sets the regular status
 func (t *TermUI) SetStatus(status string) {
 	if t.Source == MainSource {
 		t.Status = status
 	}
 }
 
+// SetError sets the error state, clears it after a timeout
 func (t *TermUI) SetError(message string) {
 	t.Error = message
 
@@ -138,10 +147,7 @@ func (t *TermUI) SetError(message string) {
 	}()
 }
 
-/*
- Rendering on the screen always starts at (0,0), but characters taken from
- the editor are from a specific viewport
-*/
+// Render the temrinal UI using tcell
 func (t *TermUI) Render() {
 	ui := NewTCellNoviUI(t.Screen, 0, 0, t.EditAreaWidth, t.EditAreaHeight-1)
 	ui.RenderTCell(t.Editor)
