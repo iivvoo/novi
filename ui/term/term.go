@@ -183,7 +183,8 @@ func (t *TermUI) DrawInput() {
 }
 
 func (t *TermUI) drawGutter(start, end int, guttersize int) {
-	// drawGutter should decide size, return it
+	// drawGutter should decide size, return it,
+	// should perhaps check if numbering is enabled
 
 	// we need an upper limit - not all rows my be in use
 	for y := 0; y < t.EditAreaHeight-1; y++ {
@@ -207,9 +208,9 @@ func (t *TermUI) drawGutter(start, end int, guttersize int) {
 */
 func (t *TermUI) Render() {
 	/*
-	 t.EditAreaWidth is the size of the editor, t.EditAreaHeight the height.
-	 Should this be purely the editing size, or also include statusbar, line gutter?
-	 It will be set to terminal H/W if not set, so it's actually the entire area to use
+	   t.EditAreaWidth is the size of the editor, t.EditAreaHeight the height.
+	   Should this be purely the editing size, or also include statusbar, line gutter?
+	   It will be set to terminal H/W if not set, so it's actually the entire area to use
 	*/
 
 	guttersize := 4 // 3 for numbers, 1 space)
