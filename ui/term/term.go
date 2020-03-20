@@ -225,11 +225,16 @@ func (t *TCellUI) RenderTCell(editor *novi.Editor) {
 	 * Print the text within the current viewports, padding lines with `fillRune`
 	 * to clear any remainders. THe latter is relevant when scrolling, for example
 	 */
+	inverse := tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite)
 	y := 0
 	for _, line := range editor.Buffer.GetLines(ViewportY, ViewportY+editHeight) {
 		x := 0
 		for _, rune := range line.GetRunes(ViewportX, ViewportX+editWidth) {
-			t.screen.SetContent(t.baseX+x+guttersize, t.baseY+y, rune, nil, tcell.StyleDefault)
+			style := tcell.StyleDefault
+			if editor.Selection.InSelection(y, x) {
+				style = inverse
+			}
+			t.screen.SetContent(t.baseX+x+guttersize, t.baseY+y, rune, nil, style)
 			x++
 		}
 		for x < editWidth {

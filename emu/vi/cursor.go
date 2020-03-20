@@ -70,6 +70,7 @@ func (em *Vi) MoveCursorRune(r rune, count int) bool {
 			em.Move(c, m[r])
 		}
 	}
+	em.UpdateSelection()
 	return true
 }
 
@@ -78,5 +79,6 @@ func (em *Vi) HandleMoveCursors(ev novi.Event) bool {
 	for _, c := range em.Editor.Cursors {
 		em.Move(c, novi.CursorMap[ev.(*novi.KeyEvent).Key])
 	}
+	em.UpdateSelection()
 	return true
 }

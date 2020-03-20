@@ -93,6 +93,14 @@ func (b *Buffer) Validate() bool {
 	return true
 }
 
+// GetLine returns the line at a specific index
+func (b *Buffer) GetLine(index int) *Line {
+	if index >= b.Length() {
+		return nil
+	}
+	return b.Lines[index]
+}
+
 // GetLines attempts to retun the lines between start/end
 func (b *Buffer) GetLines(start, end int) []*Line {
 	if start > b.Length() {

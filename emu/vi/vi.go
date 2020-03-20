@@ -49,6 +49,17 @@ const (
 	ModeCommand
 )
 
+// SelectionType is the type of selection
+type SelectionType int
+
+// and its possible values
+const (
+	SelectionNone SelectionType = iota
+	SelectionLines
+	SelectionFluid
+	SelectionBlock
+)
+
 // MainInputID identifies input from the main editing area
 const MainInputID novi.InputID = 0
 
@@ -86,6 +97,9 @@ type Vi struct {
 	CommandBuffer string
 	Counter       int
 
+	Selection                    SelectionType
+	SelectionStart, SelectionEnd novi.Cursor
+
 	ex       *Ex
 	dispatch []Dispatch
 	c        chan novi.EmuEvent
@@ -115,7 +129,12 @@ type Vi struct {
 
 // NewVi creates/setups up a new Vi emulation instance
 func NewVi(e *novi.Editor) *Vi {
-	em := &Vi{Editor: e, Mode: ModeCommand, ex: NewEx()}
+	em := &Vi{
+		Editor:    e,
+		Mode:      ModeCommand,
+		ex:        NewEx(),
+		Selection: SelectionNone,
+	}
 	dispatch := []Dispatch{
 		Dispatch{Mode: ModeCommand, Event: &novi.CharacterEvent{Rune: ':'}, Handler: em.HandleToExCommand},
 		Dispatch{Mode: ModeEdit, Event: &novi.KeyEvent{Key: novi.KeyEscape}, Handler: em.HandleToModeCommand},
@@ -131,6 +150,9 @@ func NewVi(e *novi.Editor) *Vi {
 			&novi.CharacterEvent{Rune: 'A'},
 		}, Handler: em.HandleInsertionKeys},
 
+		Dispatch{Mode: ModeCommand, Event: &novi.KeyEvent{Modifier: novi.ModCtrl, Rune: 'v'}, Handler: em.HandleSelectionBlock},
+		Dispatch{Mode: ModeCommand, Event: &novi.CharacterEvent{Rune: 'v'}, Handler: em.HandleSelectionFluid},
+		Dispatch{Mode: ModeCommand, Event: &novi.CharacterEvent{Rune: 'V'}, Handler: em.HandleSelectionLines},
 		Dispatch{Mode: ModeAny, Events: []novi.Event{
 			&novi.KeyEvent{Key: novi.KeyLeft},
 			&novi.KeyEvent{Key: novi.KeyRight},
@@ -223,9 +245,10 @@ func (em *Vi) HandleBackspace(ev novi.Event) bool {
 	return true
 }
 
-// HandleCommandClear clears the current command state (if any)
+// HandleCommandClear clears the current command state (if any) and clears the selection
 func (em *Vi) HandleCommandClear(ev novi.Event) bool {
 	em.CommandBuffer = ""
+	em.CancelSelection()
 	return true
 }
 

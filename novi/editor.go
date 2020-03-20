@@ -3,6 +3,7 @@ package novi
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/iivvoo/novi/logger"
@@ -28,10 +29,76 @@ import (
 
 var log = logger.GetLogger("editor")
 
+// Selection contains the start/end of a selection
+type Selection struct {
+	start Cursor
+	end   Cursor
+
+	emuStart Cursor
+	emuEnd   Cursor
+	block    bool
+	enabled  bool
+}
+
+func (s *Selection) SetStart(c Cursor) {
+	// make copy
+	s.start = c
+}
+
+// XXX Swap if before start?
+func (s *Selection) SetEnd(c Cursor) {
+	// make copy
+	s.end = c
+}
+
+func (s *Selection) SetBlock(b bool) {
+	s.block = b
+}
+
+func (s *Selection) Enabled() bool {
+	return s.enabled
+}
+
+func (s *Selection) Enable() {
+	s.enabled = true
+}
+
+func (s *Selection) Disable() {
+	s.enabled = false
+}
+
+// InSelection returns true if there's a selection and (line, pos) is in the selection
+func (s *Selection) InSelection(line, pos int) bool {
+	if !s.enabled {
+		return false
+	}
+	if line < s.start.Line || line == s.start.Line && pos < s.start.Pos {
+		return false
+	}
+	if line > s.end.Line || line == s.end.Line && pos > s.end.Pos {
+		return false
+	}
+
+	if s.block {
+		if pos < s.start.Pos {
+			return false
+		}
+		if pos > s.end.Pos {
+			return false
+		}
+	}
+	return true
+}
+
+func (s *Selection) ToString() string {
+	return fmt.Sprintf("from %d/%d to %d/%d", s.start.Line, s.start.Pos, s.end.Line, s.end.Pos)
+}
+
 type Editor struct {
-	filename string
-	Buffer   *Buffer
-	Cursors  Cursors
+	filename  string
+	Buffer    *Buffer
+	Cursors   Cursors
+	Selection Selection
 }
 
 func NewEditor() *Editor {
