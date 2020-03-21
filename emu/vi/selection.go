@@ -31,13 +31,14 @@ func (em *Vi) UpdateSelection() {
 			s, e = e, s
 		}
 
+		em.Editor.Selection.SetBlock(false)
 		switch em.Selection {
+		case SelectionBlock:
+			em.Editor.Selection.SetBlock(true)
+			fallthrough
 		case SelectionLines:
 			s.Pos = 0
 			e.Pos = em.Editor.Buffer.GetLine(e.Line).Len() - 1
-			fallthrough
-		case SelectionBlock:
-			em.Editor.Selection.SetBlock(true)
 			fallthrough
 		case SelectionFluid:
 			em.Editor.Selection.SetStart(s)
@@ -49,27 +50,36 @@ func (em *Vi) UpdateSelection() {
 
 // HandleSelectionBlock handles the block select key
 func (em *Vi) HandleSelectionBlock(ev novi.Event) bool {
-	// check key, set seleciton mode appropriately. Set start/end cursor
-	// based on selection. In cursor movement, update selection based on selectionmode
-	em.Selection = SelectionBlock
-	em.StartSelection()
+	if em.Selection == SelectionNone {
+		em.Selection = SelectionBlock
+		em.StartSelection()
+	} else {
+		em.Selection = SelectionBlock
+		em.UpdateSelection()
+	}
 	return true
 }
 
 // HandleSelectionFluid handles the fluid select key
 func (em *Vi) HandleSelectionFluid(ev novi.Event) bool {
-	// check key, set seleciton mode appropriately. Set start/end cursor
-	// based on selection. In cursor movement, update selection based on selectionmode
-	em.Selection = SelectionFluid
-	em.StartSelection()
+	if em.Selection == SelectionNone {
+		em.Selection = SelectionFluid
+		em.StartSelection()
+	} else {
+		em.Selection = SelectionFluid
+		em.UpdateSelection()
+	}
 	return true
 }
 
 // HandleSelectionLines handles the block select key
 func (em *Vi) HandleSelectionLines(ev novi.Event) bool {
-	// check key, set seleciton mode appropriately. Set start/end cursor
-	// based on selection. In cursor movement, update selection based on selectionmode
-	em.Selection = SelectionLines
-	em.StartSelection()
+	if em.Selection == SelectionNone {
+		em.Selection = SelectionLines
+		em.StartSelection()
+	} else {
+		em.Selection = SelectionLines
+		em.UpdateSelection()
+	}
 	return true
 }

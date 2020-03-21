@@ -34,10 +34,8 @@ type Selection struct {
 	start Cursor
 	end   Cursor
 
-	emuStart Cursor
-	emuEnd   Cursor
-	block    bool
-	enabled  bool
+	block   bool
+	enabled bool
 }
 
 func (s *Selection) SetStart(c Cursor) {
@@ -45,7 +43,6 @@ func (s *Selection) SetStart(c Cursor) {
 	s.start = c
 }
 
-// XXX Swap if before start?
 func (s *Selection) SetEnd(c Cursor) {
 	// make copy
 	s.end = c
@@ -80,6 +77,7 @@ func (s *Selection) InSelection(line, pos int) bool {
 	}
 
 	if s.block {
+		log.Printf("Block selection")
 		if pos < s.start.Pos {
 			return false
 		}
