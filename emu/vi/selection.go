@@ -35,15 +35,12 @@ func (em *Vi) UpdateSelection() {
 		switch em.Selection {
 		case SelectionBlock:
 			em.Editor.Selection.SetBlock(true)
-			fallthrough
 		case SelectionLines:
 			s.Pos = 0
 			e.Pos = em.Editor.Buffer.GetLine(e.Line).Len() - 1
-			fallthrough
-		case SelectionFluid:
-			em.Editor.Selection.SetStart(s)
-			em.Editor.Selection.SetEnd(e)
 		}
+		em.Editor.Selection.SetStart(s)
+		em.Editor.Selection.SetEnd(e)
 		log.Printf("Selection %s", em.Editor.Selection.ToString())
 	}
 }
