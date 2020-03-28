@@ -35,6 +35,9 @@ func (em *Vi) UpdateSelection() {
 		switch em.Selection {
 		case SelectionBlock:
 			em.Editor.Selection.SetBlock(true)
+			if e.Pos < s.Pos {
+				e.Pos, s.Pos = s.Pos, e.Pos
+			}
 		case SelectionLines:
 			s.Pos = 0
 			e.Pos = em.Editor.Buffer.GetLine(e.Line).Len() - 1
