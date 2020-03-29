@@ -47,6 +47,7 @@ const (
 	ModeAny ViMode = iota
 	ModeEdit
 	ModeCommand
+	ModeSelect
 )
 
 // SelectionType is the type of selection
@@ -139,6 +140,7 @@ func NewVi(e *novi.Editor) *Vi {
 		Dispatch{Mode: ModeCommand, Event: &novi.CharacterEvent{Rune: ':'}, Handler: em.HandleToExCommand},
 		Dispatch{Mode: ModeEdit, Event: &novi.KeyEvent{Key: novi.KeyEscape}, Handler: em.HandleToModeCommand},
 		Dispatch{Mode: ModeCommand, Event: &novi.KeyEvent{Key: novi.KeyEscape}, Handler: em.HandleCommandClear},
+		Dispatch{Mode: ModeSelect, Event: &novi.KeyEvent{Key: novi.KeyEscape}, Handler: em.HandleCancelSelect},
 		Dispatch{Mode: ModeCommand, Event: &novi.KeyEvent{Key: novi.KeyEnter}, Handler: em.HandleCommandEnter},
 		Dispatch{Mode: ModeEdit, Event: &novi.KeyEvent{Key: novi.KeyEnter}, Handler: em.HandleEditEnter},
 		Dispatch{Mode: ModeCommand, Events: []novi.Event{
@@ -153,6 +155,12 @@ func NewVi(e *novi.Editor) *Vi {
 		Dispatch{Mode: ModeCommand, Event: &novi.KeyEvent{Modifier: novi.ModCtrl, Rune: 'v'}, Handler: em.HandleSelectionBlock},
 		Dispatch{Mode: ModeCommand, Event: &novi.CharacterEvent{Rune: 'v'}, Handler: em.HandleSelectionFluid},
 		Dispatch{Mode: ModeCommand, Event: &novi.CharacterEvent{Rune: 'V'}, Handler: em.HandleSelectionLines},
+
+		// allow mode to be switched in Selection mode.
+		Dispatch{Mode: ModeSelect, Event: &novi.KeyEvent{Modifier: novi.ModCtrl, Rune: 'v'}, Handler: em.HandleSelectionBlock},
+		Dispatch{Mode: ModeSelect, Event: &novi.CharacterEvent{Rune: 'v'}, Handler: em.HandleSelectionFluid},
+		Dispatch{Mode: ModeSelect, Event: &novi.CharacterEvent{Rune: 'V'}, Handler: em.HandleSelectionLines},
+
 		Dispatch{Mode: ModeAny, Events: []novi.Event{
 			&novi.KeyEvent{Key: novi.KeyLeft},
 			&novi.KeyEvent{Key: novi.KeyRight},
@@ -165,6 +173,16 @@ func NewVi(e *novi.Editor) *Vi {
 			&novi.KeyEvent{Key: novi.KeyBackspace},
 			&novi.KeyEvent{Key: novi.KeyDelete},
 		}, Handler: em.HandleBackspace},
+		Dispatch{Mode: ModeSelect, Events: []novi.Event{
+			&novi.CharacterEvent{Rune: 'd'},
+			&novi.CharacterEvent{Rune: 'D'},
+			&novi.CharacterEvent{Rune: 'x'},
+			&novi.CharacterEvent{Rune: 'X'},
+		}, Handler: em.HandleSelectRemove},
+		Dispatch{Mode: ModeSelect, Events: []novi.Event{
+			&novi.CharacterEvent{Rune: 'c'},
+			&novi.CharacterEvent{Rune: 'C'},
+		}, Handler: em.HandleSelectChange},
 		// Sort of a generic fallthrough handler - handles commands in command mode
 		Dispatch{Mode: ModeCommand, Event: &novi.CharacterEvent{}, Handler: em.HandleCommandBuffer},
 		Dispatch{Mode: ModeEdit, Event: &novi.CharacterEvent{}, Handler: em.HandleAnyRune},
