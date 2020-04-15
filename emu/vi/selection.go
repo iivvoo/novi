@@ -100,7 +100,7 @@ func (em *Vi) UpdateSelection() {
 }
 
 // HandleSelectionBlock handles the block select key
-func (em *Vi) HandleSelectionBlock(ev novi.Event) bool {
+func (em *Vi) HandleSelectionBlock(novi.Event) bool {
 	if em.Selection == SelectionNone {
 		em.Selection = SelectionBlock
 		em.StartSelection()
@@ -112,7 +112,7 @@ func (em *Vi) HandleSelectionBlock(ev novi.Event) bool {
 }
 
 // HandleSelectionFluid handles the fluid select key
-func (em *Vi) HandleSelectionFluid(ev novi.Event) bool {
+func (em *Vi) HandleSelectionFluid(novi.Event) bool {
 	if em.Selection == SelectionNone {
 		em.Selection = SelectionFluid
 		em.StartSelection()
@@ -124,7 +124,7 @@ func (em *Vi) HandleSelectionFluid(ev novi.Event) bool {
 }
 
 // HandleSelectionLines handles the block select key
-func (em *Vi) HandleSelectionLines(ev novi.Event) bool {
+func (em *Vi) HandleSelectionLines(novi.Event) bool {
 	if em.Selection == SelectionNone {
 		em.Selection = SelectionLines
 		em.StartSelection()
