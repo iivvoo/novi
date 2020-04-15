@@ -27,7 +27,20 @@ func (em *Vi) HandleCancelSelect(novi.Event) bool {
 func (em *Vi) HandleSelectRemove(novi.Event) bool {
 	// Block works differently of course
 	s, e := em.GetEmuSelection()
-	em.Editor.Buffer.RemoveBetweenCursors(&s, &e)
+	if em.Selection == SelectionBlock {
+		for line := s.Line; line <= e.Line; line++ {
+			ss := novi.NewCursor(em.Editor.Buffer, line, s.Pos)
+			ee := novi.NewCursor(em.Editor.Buffer, line, e.Pos)
+			if max := em.Editor.Buffer.GetLine(line).Len() - 1; e.Pos > max {
+				ee.Pos = max
+			}
+
+			log.Printf("Deleting between (%d,%d) and (%d,%d)", ss.Line, ss.Pos, ee.Line, ee.Pos)
+			em.Editor.Buffer.RemoveBetweenCursors(ss, ee)
+		}
+	} else {
+		em.Editor.Buffer.RemoveBetweenCursors(&s, &e)
+	}
 	em.CancelSelection()
 	// move cursor to s
 	c := em.Editor.Cursors[0]
