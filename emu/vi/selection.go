@@ -53,6 +53,14 @@ func (em *Vi) HandleSelectChange(novi.Event) bool {
 	s, e := em.GetEmuSelection()
 	em.Editor.Buffer.RemoveBetweenCursors(&s, &e)
 	em.CancelSelection()
+	/*
+			  In the case of a block select, we want to replay the
+			  edit on each line. Using cursor keys seems to cancel this behaviour
+			  Ways to do this:
+			  - somehow record the actual change between going to insert and back to commandmode,
+				install a hook/handler to replay that change on each line
+		      - multi cursor. Create a cursor on each removed position, perform insert on each line
+	*/
 	em.Mode = ModeEdit
 	c := em.Editor.Cursors[0]
 	c.Line, c.Pos = s.Line, s.Pos
